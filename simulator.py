@@ -99,7 +99,7 @@ def kids_cost_annual(years_from_now: int, count: int, start_year: int) -> float:
 @dataclass
 class PersonParams:
     name: str   = "Person A"
-    age: int    = 35
+    age: int    = 36
     retire_age: int = 50
 
     # Compensation (gross annual)
@@ -127,7 +127,7 @@ class PersonParams:
 class HouseholdParams:
     person_a: PersonParams = field(default_factory=PersonParams)
     person_b: PersonParams = field(
-        default_factory=lambda: PersonParams(name="Person B", age=33, retire_age=50,
+        default_factory=lambda: PersonParams(name="Person B", age=36, retire_age=50,
                                              base_salary=180_000, unvested_rsu=150_000,
                                              k401_balance=150_000, roth_balance=40_000,
                                              ss_benefit=20_000)
@@ -149,12 +149,12 @@ class HouseholdParams:
 
     # Expenses (today's dollars)
     annual_expenses_current: float    = 120_000   # current total HH spend (excl mortgage principal)
-    annual_expenses_retirement: float = 100_000   # target retirement spend
+    annual_expenses_retirement: float = 200_000   # target retirement spend
 
     # Market assumptions
     annual_return: float = 0.07
     inflation: float     = 0.03
-    swr: float           = 0.04
+    swr: float           = 0.035
 
     # Social Security
     ss_start_age: int = 67
@@ -553,7 +553,7 @@ def results_to_dict(p: HouseholdParams, scenarios: dict[str, ScenarioResult]) ->
 def dict_to_household(d: dict) -> HouseholdParams:
     pa = PersonParams(
         name              = "Person A",
-        age               = int(d.get("age_a",             35)),
+        age               = int(d.get("age_a",             36)),
         retire_age        = int(d.get("retire_age_a",       50)),
         base_salary       = float(d.get("base_a",      200_000)),
         bonus_target_pct  = float(d.get("bonus_pct_a",    0.15)),
@@ -568,7 +568,7 @@ def dict_to_household(d: dict) -> HouseholdParams:
     )
     pb = PersonParams(
         name              = "Person B",
-        age               = int(d.get("age_b",             33)),
+        age               = int(d.get("age_b",             36)),
         retire_age        = int(d.get("retire_age_b",       50)),
         base_salary       = float(d.get("base_b",      180_000)),
         bonus_target_pct  = float(d.get("bonus_pct_b",    0.15)),
@@ -594,10 +594,10 @@ def dict_to_household(d: dict) -> HouseholdParams:
         mortgage_years_remaining = int(d.get("mortgage_years",        25)),
         sell_home_at_retirement  = bool(d.get("sell_home",          False)),
         annual_expenses_current  = float(d.get("expenses_now",   120_000)),
-        annual_expenses_retirement = float(d.get("expenses_ret", 100_000)),
+        annual_expenses_retirement = float(d.get("expenses_ret", 200_000)),
         annual_return            = float(d.get("annual_return",     0.07)),
         inflation                = float(d.get("inflation",         0.03)),
-        swr                      = float(d.get("swr",               0.04)),
+        swr                      = float(d.get("swr",               0.035)),
         ss_start_age             = int(d.get("ss_start_age",           67)),
         model_healthcare         = bool(d.get("model_healthcare",    True)),
         include_kids             = bool(d.get("include_kids",        False)),

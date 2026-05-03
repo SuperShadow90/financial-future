@@ -39,7 +39,7 @@
     .tab-pane { display:none; padding:18px; }
     .tab-pane.active { display:block; }
 
-    /* sliders */
+    /* sliders (Expenses + Returns tabs) */
     .pg { margin-bottom:16px; }
     .pl { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
     .pl span:first-child { font-size:.82rem; }
@@ -49,6 +49,33 @@
     input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:15px;
       background:var(--accent); border-radius:50%; cursor:pointer; transition:transform .1s; }
     input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.3); }
+
+    /* number inputs (Profile, Comp, Assets tabs) */
+    .field-row { display:flex; justify-content:space-between; align-items:center;
+                 margin-bottom:11px; gap:10px; }
+    .field-label { font-size:.81rem; color:var(--text); flex:1; }
+    .field-wrap { display:flex; align-items:center; background:var(--surface2);
+                  border:1px solid var(--border); border-radius:6px; overflow:hidden; flex-shrink:0; }
+    .field-wrap:focus-within { border-color:var(--accent); }
+    .field-pfx, .field-sfx { padding:5px 5px 5px 9px; font-size:.76rem;
+                              color:var(--muted); flex-shrink:0; user-select:none; }
+    .field-sfx { padding:5px 9px 5px 3px; }
+    input[type=number] { background:transparent; border:none; color:var(--text);
+                         font-size:.85rem; font-weight:600; padding:5px 8px 5px 4px;
+                         width:88px; text-align:right; outline:none;
+                         -moz-appearance:textfield; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
+
+    /* comp comparison grid */
+    .comp-table { display:grid; grid-template-columns:1fr 1fr 1fr;
+                  gap:9px 8px; margin-bottom:14px; align-items:center; }
+    .comp-table .col-head { font-size:.71rem; font-weight:700; color:var(--accent2);
+                            text-align:center; padding-bottom:6px;
+                            border-bottom:1px solid var(--border); }
+    .comp-table .row-label { font-size:.79rem; color:var(--muted); padding-right:4px; }
+    .comp-table .field-wrap { width:100%; }
+    .comp-table input[type=number] { width:100%; min-width:0; }
 
     /* toggles */
     .toggle-row { display:flex; justify-content:space-between; align-items:center;
@@ -118,6 +145,17 @@
     .b-warn { background:rgba(255,209,102,.2);color:var(--warn); }
     .b-bad  { background:rgba(255,107,107,.2);color:var(--bad); }
 
+    /* scenario legend tab */
+    .sc-item { display:flex; gap:12px; margin-bottom:16px; }
+    .sc-item:last-child { margin-bottom:0; }
+    .sc-tag { flex-shrink:0; width:32px; height:32px; border-radius:8px;
+              background:rgba(108,99,255,.2); color:var(--accent);
+              font-size:.7rem; font-weight:800; display:flex;
+              align-items:center; justify-content:center; letter-spacing:.3px; }
+    .sc-tag-warn { background:rgba(255,107,107,.15); color:var(--bad); }
+    .sc-name { font-size:.83rem; font-weight:600; margin-bottom:3px; }
+    .sc-desc { font-size:.76rem; color:var(--muted); line-height:1.55; }
+
     /* Detail table */
     .detail-scroll { max-height:260px; overflow-y:auto; }
 
@@ -140,24 +178,31 @@
       <button class="tab-btn" data-tab="assets">Assets</button>
       <button class="tab-btn" data-tab="expenses">Expenses</button>
       <button class="tab-btn" data-tab="returns">Returns</button>
+      <button class="tab-btn" data-tab="scenarios">Scenarios</button>
     </div>
 
     <!-- TAB: Profile & Timeline -->
     <div class="tab-pane active" id="tab-profile">
       <div class="section-label">Person A</div>
-      <div class="pg"><div class="pl"><span>Age</span><span class="pv" id="v-age_a">35</span></div>
-        <input type="range" id="age_a" min="22" max="65" value="35" step="1"/></div>
-      <div class="pg"><div class="pl"><span>Target Retire Age</span><span class="pv" id="v-retire_age_a">50</span></div>
-        <input type="range" id="retire_age_a" min="30" max="75" value="50" step="1"/></div>
+      <div class="field-row"><span class="field-label">Name</span>
+        <div class="field-wrap"><input type="text" id="name_a" value="Shadow"
+          style="background:transparent;border:none;color:var(--text);font-size:.85rem;font-weight:600;padding:5px 10px;width:120px;outline:none;" /></div></div>
+      <div class="field-row"><span class="field-label">Current Age</span>
+        <div class="field-wrap"><input type="number" id="age_a" value="36" min="18" max="70"/></div></div>
+      <div class="field-row"><span class="field-label">Target Retire Age</span>
+        <div class="field-wrap"><input type="number" id="retire_age_a" value="50" min="30" max="75"/></div></div>
       <hr class="div"/>
       <div class="section-label">Person B</div>
-      <div class="pg"><div class="pl"><span>Age</span><span class="pv" id="v-age_b">33</span></div>
-        <input type="range" id="age_b" min="22" max="65" value="33" step="1"/></div>
-      <div class="pg"><div class="pl"><span>Target Retire Age</span><span class="pv" id="v-retire_age_b">50</span></div>
-        <input type="range" id="retire_age_b" min="30" max="75" value="50" step="1"/></div>
+      <div class="field-row"><span class="field-label">Name</span>
+        <div class="field-wrap"><input type="text" id="name_b" value="Bailan"
+          style="background:transparent;border:none;color:var(--text);font-size:.85rem;font-weight:600;padding:5px 10px;width:120px;outline:none;" /></div></div>
+      <div class="field-row"><span class="field-label">Current Age</span>
+        <div class="field-wrap"><input type="number" id="age_b" value="36" min="18" max="70"/></div></div>
+      <div class="field-row"><span class="field-label">Target Retire Age</span>
+        <div class="field-wrap"><input type="number" id="retire_age_b" value="50" min="30" max="75"/></div></div>
       <hr class="div"/>
-      <div class="pg"><div class="pl"><span>Life Expectancy</span><span class="pv" id="v-life_expectancy">90</span></div>
-        <input type="range" id="life_expectancy" min="70" max="110" value="90" step="1"/></div>
+      <div class="field-row"><span class="field-label">Life Expectancy</span>
+        <div class="field-wrap"><input type="number" id="life_expectancy" value="90" min="70" max="110"/></div></div>
       <div class="select-row">
         <span>State</span>
         <select id="state">
@@ -179,62 +224,69 @@
 
     <!-- TAB: Compensation -->
     <div class="tab-pane" id="tab-comp">
-      <div class="section-label">Person A — Compensation</div>
-      <div class="pg"><div class="pl"><span>Base Salary</span><span class="pv" id="v-base_a">$200K</span></div>
-        <input type="range" id="base_a" min="50000" max="600000" value="200000" step="5000"/></div>
-      <div class="pg"><div class="pl"><span>Bonus Target</span><span class="pv" id="v-bonus_pct_a">15%</span></div>
-        <input type="range" id="bonus_pct_a" min="0" max="100" value="15" step="1"/></div>
-      <div class="pg"><div class="pl"><span>Unvested RSU Value</span><span class="pv" id="v-rsu_a">$200K</span></div>
-        <input type="range" id="rsu_a" min="0" max="2000000" value="200000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>RSU Vesting Years</span><span class="pv" id="v-rsu_years_a">4</span></div>
-        <input type="range" id="rsu_years_a" min="1" max="8" value="4" step="1"/></div>
-      <div class="pg"><div class="pl"><span>401(k) Contribution</span><span class="pv" id="v-k401_contrib_a">$23.5K</span></div>
-        <input type="range" id="k401_contrib_a" min="0" max="70000" value="23500" step="500"/></div>
-      <hr class="div"/>
-      <div class="section-label">Person B — Compensation</div>
-      <div class="pg"><div class="pl"><span>Base Salary</span><span class="pv" id="v-base_b">$180K</span></div>
-        <input type="range" id="base_b" min="50000" max="600000" value="180000" step="5000"/></div>
-      <div class="pg"><div class="pl"><span>Bonus Target</span><span class="pv" id="v-bonus_pct_b">15%</span></div>
-        <input type="range" id="bonus_pct_b" min="0" max="100" value="15" step="1"/></div>
-      <div class="pg"><div class="pl"><span>Unvested RSU Value</span><span class="pv" id="v-rsu_b">$150K</span></div>
-        <input type="range" id="rsu_b" min="0" max="2000000" value="150000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>RSU Vesting Years</span><span class="pv" id="v-rsu_years_b">4</span></div>
-        <input type="range" id="rsu_years_b" min="1" max="8" value="4" step="1"/></div>
-      <div class="pg"><div class="pl"><span>401(k) Contribution</span><span class="pv" id="v-k401_contrib_b">$23.5K</span></div>
-        <input type="range" id="k401_contrib_b" min="0" max="70000" value="23500" step="500"/></div>
+      <div class="comp-table">
+        <div></div>
+        <div class="col-head" id="comp-head-a">Person A</div>
+        <div class="col-head" id="comp-head-b">Person B</div>
+
+        <div class="row-label">Base Salary</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="base_a" value="200000" min="0" step="1000"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="base_b" value="180000" min="0" step="1000"/></div>
+
+        <div class="row-label">Bonus Target</div>
+        <div class="field-wrap"><input type="number" id="bonus_pct_a" value="15" min="0" max="100" step="1"/><span class="field-sfx">%</span></div>
+        <div class="field-wrap"><input type="number" id="bonus_pct_b" value="15" min="0" max="100" step="1"/><span class="field-sfx">%</span></div>
+
+        <div class="row-label">Unvested RSUs</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="rsu_a" value="200000" min="0" step="1000"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="rsu_b" value="150000" min="0" step="1000"/></div>
+
+        <div class="row-label">RSU Vest Years</div>
+        <div class="field-wrap"><input type="number" id="rsu_years_a" value="4" min="1" max="10" step="1"/><span class="field-sfx">yr</span></div>
+        <div class="field-wrap"><input type="number" id="rsu_years_b" value="4" min="1" max="10" step="1"/><span class="field-sfx">yr</span></div>
+
+        <div class="row-label">401(k) Contrib</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="k401_contrib_a" value="23500" min="0" max="70000" step="500"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="k401_contrib_b" value="23500" min="0" max="70000" step="500"/></div>
+      </div>
+      <p class="note">Bonus payout modelled at 80% of target. RSU income taxed at 37% federal + state rate. 401(k) contributions reduce taxable income.</p>
     </div>
 
     <!-- TAB: Assets & Liabilities -->
     <div class="tab-pane" id="tab-assets">
-      <div class="section-label">Person A Accounts</div>
-      <div class="pg"><div class="pl"><span>401(k)</span><span class="pv" id="v-k401_a">$200K</span></div>
-        <input type="range" id="k401_a" min="0" max="3000000" value="200000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>Roth IRA</span><span class="pv" id="v-roth_a">$50K</span></div>
-        <input type="range" id="roth_a" min="0" max="500000" value="50000" step="5000"/></div>
-      <div class="pg"><div class="pl"><span>HSA</span><span class="pv" id="v-hsa_a">$10K</span></div>
-        <input type="range" id="hsa_a" min="0" max="200000" value="10000" step="1000"/></div>
-      <hr class="div"/>
-      <div class="section-label">Person B Accounts</div>
-      <div class="pg"><div class="pl"><span>401(k)</span><span class="pv" id="v-k401_b">$150K</span></div>
-        <input type="range" id="k401_b" min="0" max="3000000" value="150000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>Roth IRA</span><span class="pv" id="v-roth_b">$40K</span></div>
-        <input type="range" id="roth_b" min="0" max="500000" value="40000" step="5000"/></div>
-      <div class="pg"><div class="pl"><span>HSA</span><span class="pv" id="v-hsa_b">$8K</span></div>
-        <input type="range" id="hsa_b" min="0" max="200000" value="8000" step="1000"/></div>
+      <div class="comp-table">
+        <div></div>
+        <div class="col-head">Person A</div>
+        <div class="col-head">Person B</div>
+
+        <div class="row-label">401(k)</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="k401_a" value="200000" min="0" step="1000"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="k401_b" value="150000" min="0" step="1000"/></div>
+
+        <div class="row-label">Roth IRA</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="roth_a" value="50000" min="0" step="1000"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="roth_b" value="40000" min="0" step="1000"/></div>
+
+        <div class="row-label">HSA</div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="hsa_a" value="10000" min="0" step="500"/></div>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="hsa_b" value="8000"  min="0" step="500"/></div>
+      </div>
+
       <hr class="div"/>
       <div class="section-label">Shared Accounts</div>
-      <div class="pg"><div class="pl"><span>Taxable Brokerage</span><span class="pv" id="v-brokerage">$300K</span></div>
-        <input type="range" id="brokerage" min="0" max="5000000" value="300000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>Cash / Emergency Fund</span><span class="pv" id="v-cash">$100K</span></div>
-        <input type="range" id="cash" min="0" max="1000000" value="100000" step="5000"/></div>
+      <div class="field-row"><span class="field-label">Taxable Brokerage</span>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="brokerage" value="300000" min="0" step="1000"/></div></div>
+      <div class="field-row"><span class="field-label">Cash / Emergency Fund</span>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="cash" value="100000" min="0" step="1000"/></div></div>
+
       <hr class="div"/>
-      <div class="section-label">Home</div>
-      <div class="pg"><div class="pl"><span>Home Value</span><span class="pv" id="v-home_value">$1.50M</span></div>
-        <input type="range" id="home_value" min="0" max="5000000" value="1500000" step="50000"/></div>
-      <div class="pg"><div class="pl"><span>Mortgage Balance</span><span class="pv" id="v-mortgage_bal">$800K</span></div>
-        <input type="range" id="mortgage_bal" min="0" max="3000000" value="800000" step="10000"/></div>
-      <div class="pg"><div class="pl"><span>Monthly Payment</span><span class="pv" id="v-mortgage_pmt">$5,000</span></div>
-        <input type="range" id="mortgage_pmt" min="0" max="20000" value="5000" step="100"/></div>
+      <div class="section-label">Primary Residence</div>
+      <div class="field-row"><span class="field-label">Home Value</span>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="home_value" value="1500000" min="0" step="10000"/></div></div>
+      <div class="field-row"><span class="field-label">Mortgage Balance</span>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="mortgage_bal" value="800000" min="0" step="1000"/></div></div>
+      <div class="field-row"><span class="field-label">Monthly Payment</span>
+        <div class="field-wrap"><span class="field-pfx">$</span><input type="number" id="mortgage_pmt" value="5000" min="0" step="100"/></div></div>
       <div class="toggle-row">
         <span>Sell home at retirement</span>
         <label class="toggle"><input type="checkbox" id="sell_home"/><span class="slider-t"></span></label>
@@ -246,7 +298,7 @@
       <div class="pg"><div class="pl"><span>Current Annual Spend</span><span class="pv" id="v-expenses_now">$120K</span></div>
         <input type="range" id="expenses_now" min="40000" max="500000" value="120000" step="5000"/></div>
       <div class="pg"><div class="pl"><span>Retirement Annual Spend</span><span class="pv" id="v-expenses_ret">$100K</span></div>
-        <input type="range" id="expenses_ret" min="30000" max="500000" value="100000" step="5000"/></div>
+        <input type="range" id="expenses_ret" min="30000" max="500000" value="200000" step="5000"/></div>
       <hr class="div"/>
       <div class="section-label">Social Security</div>
       <div class="pg"><div class="pl"><span>Person A SS Benefit ($/yr)</span><span class="pv" id="v-ss_a">$24K</span></div>
@@ -277,6 +329,80 @@
       <p class="note">S8 applies this reduction to retirement spending to model relocating to a lower-cost area.</p>
     </div>
 
+    <!-- TAB: Scenarios -->
+    <div class="tab-pane" id="tab-scenarios">
+      <div class="sc-item">
+        <div class="sc-tag">S1</div>
+        <div>
+          <div class="sc-name">Base Case</div>
+          <div class="sc-desc">Both partners work until the portfolio hits the FIRE number. No kids, no life disruptions. This is the benchmark all other scenarios are compared against.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S2</div>
+        <div>
+          <div class="sc-name">Sequential FIRE</div>
+          <div class="sc-desc">Person A retires at their target age while Person B keeps working 3 more years. The second income covers expenses and lets the portfolio grow untouched — often a much easier path than both retiring simultaneously.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S3</div>
+        <div>
+          <div class="sc-name">With Kids</div>
+          <div class="sc-desc">Adds child-rearing costs: ~$20K/yr ages 0–5, $15K/yr ages 6–17, and $40K/yr for college (ages 18–21). Configure the number of kids and start year in the Expenses tab. Shows how many years kids push back the FIRE date.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S4</div>
+        <div>
+          <div class="sc-name">Lean FIRE</div>
+          <div class="sc-desc">Cuts retirement spending by 30% below your target. Models a frugal retirement — fewer vacations, smaller home, lower discretionary spending. Dramatically lowers the FIRE number and accelerates the timeline.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S5</div>
+        <div>
+          <div class="sc-name">Fat FIRE</div>
+          <div class="sc-desc">Targets 150% of your retirement spend (minimum $150K/yr). Models an affluent retirement with travel, dining, and lifestyle upgrades. Requires a much larger portfolio and longer working years.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag sc-tag-warn">S6</div>
+        <div>
+          <div class="sc-name">Sequence-of-Returns Risk</div>
+          <div class="sc-desc">Simulates a 35% market crash in year 1 of retirement — the worst-case timing. Retiring into a bear market can permanently impair a portfolio. If this scenario still shows the portfolio surviving to life expectancy, the plan is robust.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S7</div>
+        <div>
+          <div class="sc-name">Coast FIRE</div>
+          <div class="sc-desc">Calculates whether you could stop contributing today and let compounding alone grow the portfolio to your FIRE number by your target retire age. If you've hit Coast FIRE, you could downshift to a lower-stress or part-time job now.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S8</div>
+        <div>
+          <div class="sc-name">Geographic Arbitrage</div>
+          <div class="sc-desc">Applies the COL reduction (set in Expenses tab) to retirement spending — modeling a move to a lower-cost city, state, or country (e.g. Portugal, Mexico, Southeast Asia, or a lower-cost US metro). Can shave years off the timeline.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S9</div>
+        <div>
+          <div class="sc-name">Mortgage Paid Off</div>
+          <div class="sc-desc">Models retiring with no mortgage payment. Reduces retirement expenses by roughly the interest portion of your monthly payment. Compare against S1 to see whether paying off the mortgage early beats investing the difference.</div>
+        </div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag sc-tag-warn">S10</div>
+        <div>
+          <div class="sc-name">Layoff Disruption</div>
+          <div class="sc-desc">Person A loses their job in year 1 for 12 months — zero income, zero RSU vesting. Shows the FIRE date impact of a single tech layoff. If both partners were laid off simultaneously, the effect would roughly double.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB: Returns & Assumptions -->
     <div class="tab-pane" id="tab-returns">
       <div class="pg"><div class="pl"><span>Annual Nominal Return</span><span class="pv" id="v-annual_return">7.0%</span></div>
@@ -284,7 +410,7 @@
       <div class="pg"><div class="pl"><span>Inflation Rate</span><span class="pv" id="v-inflation">3.0%</span></div>
         <input type="range" id="inflation" min="0" max="10" value="3" step="0.5"/></div>
       <div class="pg"><div class="pl"><span>Safe Withdrawal Rate</span><span class="pv" id="v-swr">4.0%</span></div>
-        <input type="range" id="swr" min="2" max="6" value="4" step="0.1"/></div>
+        <input type="range" id="swr" min="2" max="6" value="3.5" step="0.1"/></div>
       <hr class="div"/>
       <p class="note" style="line-height:1.7">
         <b style="color:var(--text)">Return presets:</b><br/>
@@ -390,38 +516,32 @@ const fmt = n => {
 const pct = v => (v * 100).toFixed(1) + '%';
 const num = v => v == null ? '—' : Math.round(v).toLocaleString();
 
-// ── Slider registry ─────────────────────────────────────────────
+// ── Number inputs (Profile, Comp, Assets) ───────────────────────
+const NUMBER_INPUTS = [
+  'age_a','retire_age_a','age_b','retire_age_b','life_expectancy',
+  'base_a','bonus_pct_a','rsu_a','rsu_years_a','k401_contrib_a',
+  'base_b','bonus_pct_b','rsu_b','rsu_years_b','k401_contrib_b',
+  'k401_a','roth_a','hsa_a','k401_b','roth_b','hsa_b',
+  'brokerage','cash','home_value','mortgage_bal','mortgage_pmt',
+];
+NUMBER_INPUTS.forEach(id => {
+  document.getElementById(id)?.addEventListener('input', debounceSim);
+});
+
+// Name fields update comp table headers + trigger sim
+['name_a','name_b'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const suffix = id === 'name_a' ? 'a' : 'b';
+    const headEl = document.getElementById('comp-head-' + suffix);
+    if (headEl) headEl.textContent = el.value || (suffix === 'a' ? 'Person A' : 'Person B');
+    debounceSim();
+  });
+});
+
+// ── Slider registry (Expenses + Returns only) ────────────────────
 const SLIDERS = [
-  // profile
-  { id:'age_a',            fmt: v => Math.round(v) },
-  { id:'retire_age_a',     fmt: v => Math.round(v) },
-  { id:'age_b',            fmt: v => Math.round(v) },
-  { id:'retire_age_b',     fmt: v => Math.round(v) },
-  { id:'life_expectancy',  fmt: v => Math.round(v) },
-  // comp
-  { id:'base_a',           fmt: v => fmt(v) },
-  { id:'bonus_pct_a',      fmt: v => Math.round(v) + '%' },
-  { id:'rsu_a',            fmt: v => fmt(v) },
-  { id:'rsu_years_a',      fmt: v => Math.round(v) },
-  { id:'k401_contrib_a',   fmt: v => fmt(v) },
-  { id:'base_b',           fmt: v => fmt(v) },
-  { id:'bonus_pct_b',      fmt: v => Math.round(v) + '%' },
-  { id:'rsu_b',            fmt: v => fmt(v) },
-  { id:'rsu_years_b',      fmt: v => Math.round(v) },
-  { id:'k401_contrib_b',   fmt: v => fmt(v) },
-  // assets
-  { id:'k401_a',           fmt: v => fmt(v) },
-  { id:'roth_a',           fmt: v => fmt(v) },
-  { id:'hsa_a',            fmt: v => fmt(v) },
-  { id:'k401_b',           fmt: v => fmt(v) },
-  { id:'roth_b',           fmt: v => fmt(v) },
-  { id:'hsa_b',            fmt: v => fmt(v) },
-  { id:'brokerage',        fmt: v => fmt(v) },
-  { id:'cash',             fmt: v => fmt(v) },
-  { id:'home_value',       fmt: v => fmt(v) },
-  { id:'mortgage_bal',     fmt: v => fmt(v) },
-  { id:'mortgage_pmt',     fmt: v => '$' + Math.round(v).toLocaleString() },
-  // expenses
   { id:'expenses_now',     fmt: v => fmt(v) },
   { id:'expenses_ret',     fmt: v => fmt(v) },
   { id:'ss_a',             fmt: v => fmt(v) },
@@ -430,7 +550,6 @@ const SLIDERS = [
   { id:'kids_count',       fmt: v => Math.round(v) },
   { id:'kids_start_years', fmt: v => Math.round(v) },
   { id:'geo_col_reduction',fmt: v => Math.round(v) + '%' },
-  // returns
   { id:'annual_return',    fmt: v => v.toFixed(1) + '%' },
   { id:'inflation',        fmt: v => v.toFixed(1) + '%' },
   { id:'swr',              fmt: v => v.toFixed(1) + '%' },

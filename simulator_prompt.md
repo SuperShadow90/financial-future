@@ -22,7 +22,7 @@ scenario comparisons. Be precise, use real formulas, and flag risks.
 Take the following as input. Allow me to toggle
 
 ### Identity & Timeline
-- Current ages (Person A, Person B)
+- Current ages (Person A, Person B) — **Default: both age 36**
 - Target FIRE age (each, or as a household)
 - Expected lifespan to model (default: age 90)
 
@@ -52,6 +52,7 @@ Take the following as input. Allow me to toggle
 ### Annual Expenses
 - Current annual household spending (exclude mortgage principal, which builds equity)
 - Expected retirement annual spending (in today's dollars)
+  - **Default: $200,000/yr (today's dollars)**
   - If different from current, explain what changes (no commute costs, more travel, etc.)
 - Do you plan to pay off mortgage before retiring? (yes/no)
   - If yes, does retirement spending include or exclude housing costs?
@@ -77,6 +78,7 @@ Take the following as input. Allow me to toggle
 - FIRE style target: Lean (<$60K/yr), Regular ($80–100K/yr), Fat ($120K+/yr), 
   or Coast FIRE
 - Risk tolerance: Conservative (3.5% SWR), Moderate (4% SWR), Aggressive (4.5% SWR)
+  - **Default: 3.5% SWR (Conservative)**
 - Are both partners required to retire simultaneously, or is one-at-a-time okay?
 
 ---
