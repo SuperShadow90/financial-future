@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FIRE Simulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+      --accent:#6c63ff; --accent2:#00d4aa; --warn:#ffd166; --bad:#ff6b6b;
+      --text:#e8eaf0; --muted:#7a7f9a; --r:10px;
+    }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+           background:var(--bg); color:var(--text); min-height:100vh; padding:20px 16px 60px; }
+
+    /* ── HEADER ── */
+    h1 { text-align:center; font-size:1.8rem; font-weight:700; letter-spacing:-.5px; margin-bottom:2px; }
+    .subtitle { text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:24px; }
+
+    /* ── LAYOUT ── */
+    .layout { max-width:1360px; margin:0 auto; display:grid;
+              grid-template-columns:360px 1fr; gap:18px; align-items:start; }
+    @media(max-width:900px){ .layout{grid-template-columns:1fr;} }
+
+    /* ── INPUT PANEL ── */
+    .input-panel { background:var(--surface); border:1px solid var(--border);
+                   border-radius:var(--r); overflow:hidden; }
+
+    /* section tabs */
+    .tabs { display:flex; flex-wrap:wrap; border-bottom:1px solid var(--border); }
+    .tab-btn { flex:1; padding:10px 4px; font-size:.72rem; font-weight:600;
+               text-transform:uppercase; letter-spacing:.6px; cursor:pointer;
+               background:none; border:none; border-bottom:2px solid transparent;
+               color:var(--muted); transition:color .15s,border-color .15s; }
+    .tab-btn:hover { color:var(--text); }
+    .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .tab-pane { display:none; padding:18px; }
+    .tab-pane.active { display:block; }
+
+    /* sliders */
+    .pg { margin-bottom:16px; }
+    .pl { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+    .pl span:first-child { font-size:.82rem; }
+    .pv { font-size:.85rem; font-weight:700; color:var(--accent2); min-width:90px; text-align:right; }
+    input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:var(--border);
+                        border-radius:2px; outline:none; cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:15px; height:15px;
+      background:var(--accent); border-radius:50%; cursor:pointer; transition:transform .1s; }
+    input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.3); }
+
+    /* toggles */
+    .toggle-row { display:flex; justify-content:space-between; align-items:center;
+                  margin-bottom:16px; font-size:.82rem; }
+    .toggle { position:relative; display:inline-block; width:38px; height:20px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .slider-t { position:absolute; inset:0; background:var(--border); border-radius:20px;
+                cursor:pointer; transition:background .2s; }
+    .slider-t::before { content:""; position:absolute; height:14px; width:14px; left:3px; bottom:3px;
+                        background:#fff; border-radius:50%; transition:transform .2s; }
+    .toggle input:checked + .slider-t { background:var(--accent); }
+    .toggle input:checked + .slider-t::before { transform:translateX(18px); }
+
+    .select-row { display:flex; justify-content:space-between; align-items:center;
+                  margin-bottom:16px; font-size:.82rem; gap:8px; }
+    select { background:var(--surface2); border:1px solid var(--border); color:var(--text);
+             padding:5px 8px; border-radius:6px; font-size:.8rem; flex:1; max-width:180px; }
+
+    .section-label { font-size:.7rem; font-weight:600; text-transform:uppercase;
+                     letter-spacing:.8px; color:var(--muted); margin-bottom:12px; margin-top:4px; }
+    hr.div { border:none; border-top:1px solid var(--border); margin:14px 0; }
+    .note { font-size:.74rem; color:var(--muted); line-height:1.6; }
+
+    /* ── OUTPUT ── */
+    .out { display:flex; flex-direction:column; gap:14px; }
+
+    /* KPI cards */
+    .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    @media(max-width:600px){ .kpi-grid{grid-template-columns:1fr 1fr;} }
+    .kpi { background:var(--surface); border:1px solid var(--border);
+           border-radius:var(--r); padding:14px; }
+    .kl { font-size:.68rem; text-transform:uppercase; letter-spacing:.7px;
+          color:var(--muted); margin-bottom:6px; }
+    .kv { font-size:1.4rem; font-weight:700; line-height:1; }
+    .ks { font-size:.72rem; color:var(--muted); margin-top:3px; }
+    .good { color:var(--accent2); } .warn { color:var(--warn); } .bad { color:var(--bad); }
+
+    /* Chart */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:18px; }
+    .card-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .card-title { font-size:.88rem; font-weight:600; }
+    .legend { display:flex; gap:12px; flex-wrap:wrap; }
+    .li { display:flex; align-items:center; gap:5px; font-size:.72rem; color:var(--muted); }
+    .ld { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .chart-wrap { position:relative; height:280px; }
+
+    /* Scenario table */
+    .scenario-card { background:var(--surface); border:1px solid var(--border);
+                     border-radius:var(--r); overflow:hidden; }
+    .sc-hdr { padding:13px 18px; font-size:.85rem; font-weight:600;
+              border-bottom:1px solid var(--border); }
+    .sc-scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.78rem; white-space:nowrap; }
+    thead th { background:var(--surface2); padding:9px 14px; text-align:right;
+               font-weight:600; color:var(--muted); font-size:.7rem;
+               text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; }
+    thead th:first-child { text-align:left; }
+    tbody tr { border-bottom:1px solid var(--border); }
+    tbody tr:hover { background:var(--surface2); }
+    tbody td { padding:9px 14px; text-align:right; }
+    tbody td:first-child { text-align:left; font-weight:600; }
+    .fire-row { background:rgba(108,99,255,.1); }
+    .bad-row  { background:rgba(255,107,107,.07); }
+    .badge { display:inline-block; padding:2px 7px; border-radius:99px;
+             font-size:.67rem; font-weight:700; }
+    .b-good { background:rgba(0,212,170,.2);  color:var(--accent2); }
+    .b-warn { background:rgba(255,209,102,.2);color:var(--warn); }
+    .b-bad  { background:rgba(255,107,107,.2);color:var(--bad); }
+
+    /* Detail table */
+    .detail-scroll { max-height:260px; overflow-y:auto; }
+
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  </style>
+</head>
+<body>
+
+<h1>🔥 FIRE Simulator</h1>
+<p class="subtitle">Dual-income tech household · 10 scenarios · Powered by simulator.py</p>
+
+<div class="layout">
+
+  <!-- ══════════ INPUT PANEL ══════════ -->
+  <div class="input-panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="profile">Profile</button>
+      <button class="tab-btn" data-tab="comp">Comp</button>
+      <button class="tab-btn" data-tab="assets">Assets</button>
+      <button class="tab-btn" data-tab="expenses">Expenses</button>
+      <button class="tab-btn" data-tab="returns">Returns</button>
+    </div>
+
+    <!-- TAB: Profile & Timeline -->
+    <div class="tab-pane active" id="tab-profile">
+      <div class="section-label">Person A</div>
+      <div class="pg"><div class="pl"><span>Age</span><span class="pv" id="v-age_a">35</span></div>
+        <input type="range" id="age_a" min="22" max="65" value="35" step="1"/></div>
+      <div class="pg"><div class="pl"><span>Target Retire Age</span><span class="pv" id="v-retire_age_a">50</span></div>
+        <input type="range" id="retire_age_a" min="30" max="75" value="50" step="1"/></div>
+      <hr class="div"/>
+      <div class="section-label">Person B</div>
+      <div class="pg"><div class="pl"><span>Age</span><span class="pv" id="v-age_b">33</span></div>
+        <input type="range" id="age_b" min="22" max="65" value="33" step="1"/></div>
+      <div class="pg"><div class="pl"><span>Target Retire Age</span><span class="pv" id="v-retire_age_b">50</span></div>
+        <input type="range" id="retire_age_b" min="30" max="75" value="50" step="1"/></div>
+      <hr class="div"/>
+      <div class="pg"><div class="pl"><span>Life Expectancy</span><span class="pv" id="v-life_expectancy">90</span></div>
+        <input type="range" id="life_expectancy" min="70" max="110" value="90" step="1"/></div>
+      <div class="select-row">
+        <span>State</span>
+        <select id="state">
+          <option value="CA" selected>CA – 9.3%</option>
+          <option value="WA">WA – 0%</option>
+          <option value="TX">TX – 0%</option>
+          <option value="NY">NY – 6.85%</option>
+          <option value="FL">FL – 0%</option>
+          <option value="OR">OR – 9%</option>
+          <option value="CO">CO – 4.4%</option>
+          <option value="MA">MA – 5%</option>
+          <option value="IL">IL – 4.95%</option>
+          <option value="VA">VA – 5.75%</option>
+          <option value="NV">NV – 0%</option>
+          <option value="AZ">AZ – 2.5%</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TAB: Compensation -->
+    <div class="tab-pane" id="tab-comp">
+      <div class="section-label">Person A — Compensation</div>
+      <div class="pg"><div class="pl"><span>Base Salary</span><span class="pv" id="v-base_a">$200K</span></div>
+        <input type="range" id="base_a" min="50000" max="600000" value="200000" step="5000"/></div>
+      <div class="pg"><div class="pl"><span>Bonus Target</span><span class="pv" id="v-bonus_pct_a">15%</span></div>
+        <input type="range" id="bonus_pct_a" min="0" max="100" value="15" step="1"/></div>
+      <div class="pg"><div class="pl"><span>Unvested RSU Value</span><span class="pv" id="v-rsu_a">$200K</span></div>
+        <input type="range" id="rsu_a" min="0" max="2000000" value="200000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>RSU Vesting Years</span><span class="pv" id="v-rsu_years_a">4</span></div>
+        <input type="range" id="rsu_years_a" min="1" max="8" value="4" step="1"/></div>
+      <div class="pg"><div class="pl"><span>401(k) Contribution</span><span class="pv" id="v-k401_contrib_a">$23.5K</span></div>
+        <input type="range" id="k401_contrib_a" min="0" max="70000" value="23500" step="500"/></div>
+      <hr class="div"/>
+      <div class="section-label">Person B — Compensation</div>
+      <div class="pg"><div class="pl"><span>Base Salary</span><span class="pv" id="v-base_b">$180K</span></div>
+        <input type="range" id="base_b" min="50000" max="600000" value="180000" step="5000"/></div>
+      <div class="pg"><div class="pl"><span>Bonus Target</span><span class="pv" id="v-bonus_pct_b">15%</span></div>
+        <input type="range" id="bonus_pct_b" min="0" max="100" value="15" step="1"/></div>
+      <div class="pg"><div class="pl"><span>Unvested RSU Value</span><span class="pv" id="v-rsu_b">$150K</span></div>
+        <input type="range" id="rsu_b" min="0" max="2000000" value="150000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>RSU Vesting Years</span><span class="pv" id="v-rsu_years_b">4</span></div>
+        <input type="range" id="rsu_years_b" min="1" max="8" value="4" step="1"/></div>
+      <div class="pg"><div class="pl"><span>401(k) Contribution</span><span class="pv" id="v-k401_contrib_b">$23.5K</span></div>
+        <input type="range" id="k401_contrib_b" min="0" max="70000" value="23500" step="500"/></div>
+    </div>
+
+    <!-- TAB: Assets & Liabilities -->
+    <div class="tab-pane" id="tab-assets">
+      <div class="section-label">Person A Accounts</div>
+      <div class="pg"><div class="pl"><span>401(k)</span><span class="pv" id="v-k401_a">$200K</span></div>
+        <input type="range" id="k401_a" min="0" max="3000000" value="200000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>Roth IRA</span><span class="pv" id="v-roth_a">$50K</span></div>
+        <input type="range" id="roth_a" min="0" max="500000" value="50000" step="5000"/></div>
+      <div class="pg"><div class="pl"><span>HSA</span><span class="pv" id="v-hsa_a">$10K</span></div>
+        <input type="range" id="hsa_a" min="0" max="200000" value="10000" step="1000"/></div>
+      <hr class="div"/>
+      <div class="section-label">Person B Accounts</div>
+      <div class="pg"><div class="pl"><span>401(k)</span><span class="pv" id="v-k401_b">$150K</span></div>
+        <input type="range" id="k401_b" min="0" max="3000000" value="150000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>Roth IRA</span><span class="pv" id="v-roth_b">$40K</span></div>
+        <input type="range" id="roth_b" min="0" max="500000" value="40000" step="5000"/></div>
+      <div class="pg"><div class="pl"><span>HSA</span><span class="pv" id="v-hsa_b">$8K</span></div>
+        <input type="range" id="hsa_b" min="0" max="200000" value="8000" step="1000"/></div>
+      <hr class="div"/>
+      <div class="section-label">Shared Accounts</div>
+      <div class="pg"><div class="pl"><span>Taxable Brokerage</span><span class="pv" id="v-brokerage">$300K</span></div>
+        <input type="range" id="brokerage" min="0" max="5000000" value="300000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>Cash / Emergency Fund</span><span class="pv" id="v-cash">$100K</span></div>
+        <input type="range" id="cash" min="0" max="1000000" value="100000" step="5000"/></div>
+      <hr class="div"/>
+      <div class="section-label">Home</div>
+      <div class="pg"><div class="pl"><span>Home Value</span><span class="pv" id="v-home_value">$1.50M</span></div>
+        <input type="range" id="home_value" min="0" max="5000000" value="1500000" step="50000"/></div>
+      <div class="pg"><div class="pl"><span>Mortgage Balance</span><span class="pv" id="v-mortgage_bal">$800K</span></div>
+        <input type="range" id="mortgage_bal" min="0" max="3000000" value="800000" step="10000"/></div>
+      <div class="pg"><div class="pl"><span>Monthly Payment</span><span class="pv" id="v-mortgage_pmt">$5,000</span></div>
+        <input type="range" id="mortgage_pmt" min="0" max="20000" value="5000" step="100"/></div>
+      <div class="toggle-row">
+        <span>Sell home at retirement</span>
+        <label class="toggle"><input type="checkbox" id="sell_home"/><span class="slider-t"></span></label>
+      </div>
+    </div>
+
+    <!-- TAB: Expenses & Lifestyle -->
+    <div class="tab-pane" id="tab-expenses">
+      <div class="pg"><div class="pl"><span>Current Annual Spend</span><span class="pv" id="v-expenses_now">$120K</span></div>
+        <input type="range" id="expenses_now" min="40000" max="500000" value="120000" step="5000"/></div>
+      <div class="pg"><div class="pl"><span>Retirement Annual Spend</span><span class="pv" id="v-expenses_ret">$100K</span></div>
+        <input type="range" id="expenses_ret" min="30000" max="500000" value="100000" step="5000"/></div>
+      <hr class="div"/>
+      <div class="section-label">Social Security</div>
+      <div class="pg"><div class="pl"><span>Person A SS Benefit ($/yr)</span><span class="pv" id="v-ss_a">$24K</span></div>
+        <input type="range" id="ss_a" min="0" max="60000" value="24000" step="1000"/></div>
+      <div class="pg"><div class="pl"><span>Person B SS Benefit ($/yr)</span><span class="pv" id="v-ss_b">$20K</span></div>
+        <input type="range" id="ss_b" min="0" max="60000" value="20000" step="1000"/></div>
+      <div class="pg"><div class="pl"><span>SS Start Age</span><span class="pv" id="v-ss_start_age">67</span></div>
+        <input type="range" id="ss_start_age" min="62" max="70" value="67" step="1"/></div>
+      <hr class="div"/>
+      <div class="toggle-row">
+        <span>Model healthcare costs</span>
+        <label class="toggle"><input type="checkbox" id="model_healthcare" checked/><span class="slider-t"></span></label>
+      </div>
+      <hr class="div"/>
+      <div class="section-label">Kids (S3 scenario)</div>
+      <div class="toggle-row">
+        <span>Include kids in S3</span>
+        <label class="toggle"><input type="checkbox" id="include_kids"/><span class="slider-t"></span></label>
+      </div>
+      <div class="pg"><div class="pl"><span>Number of Kids</span><span class="pv" id="v-kids_count">1</span></div>
+        <input type="range" id="kids_count" min="1" max="4" value="1" step="1"/></div>
+      <div class="pg"><div class="pl"><span>First Kid (years from now)</span><span class="pv" id="v-kids_start_years">2</span></div>
+        <input type="range" id="kids_start_years" min="0" max="10" value="2" step="1"/></div>
+      <hr class="div"/>
+      <div class="section-label">Geographic Arbitrage (S8)</div>
+      <div class="pg"><div class="pl"><span>COL Reduction</span><span class="pv" id="v-geo_col_reduction">35%</span></div>
+        <input type="range" id="geo_col_reduction" min="10" max="70" value="35" step="5"/></div>
+      <p class="note">S8 applies this reduction to retirement spending to model relocating to a lower-cost area.</p>
+    </div>
+
+    <!-- TAB: Returns & Assumptions -->
+    <div class="tab-pane" id="tab-returns">
+      <div class="pg"><div class="pl"><span>Annual Nominal Return</span><span class="pv" id="v-annual_return">7.0%</span></div>
+        <input type="range" id="annual_return" min="1" max="15" value="7" step="0.5"/></div>
+      <div class="pg"><div class="pl"><span>Inflation Rate</span><span class="pv" id="v-inflation">3.0%</span></div>
+        <input type="range" id="inflation" min="0" max="10" value="3" step="0.5"/></div>
+      <div class="pg"><div class="pl"><span>Safe Withdrawal Rate</span><span class="pv" id="v-swr">4.0%</span></div>
+        <input type="range" id="swr" min="2" max="6" value="4" step="0.1"/></div>
+      <hr class="div"/>
+      <p class="note" style="line-height:1.7">
+        <b style="color:var(--text)">Return presets:</b><br/>
+        Conservative: 5 % real → ~8 % nominal @ 3 % inflation<br/>
+        Base: 7 % real → ~10 % nominal<br/>
+        Optimistic: 9 % real → ~12 % nominal<br/><br/>
+        <b style="color:var(--text)">SWR presets:</b><br/>
+        Conservative: 3.5 % &nbsp;·&nbsp; Moderate: 4 % &nbsp;·&nbsp; Aggressive: 4.5 %<br/><br/>
+        All projections use nominal math internally. Real (inflation-adjusted) values are shown alongside nominal in the annual table.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════ OUTPUT ══════════ -->
+  <div class="out">
+
+    <!-- Summary KPIs -->
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi"><div class="kl">Liquid Net Worth</div><div class="kv good" id="kpi-lnw">—</div><div class="ks">Today</div></div>
+      <div class="kpi"><div class="kl">FIRE Number</div><div class="kv" id="kpi-fire">—</div><div class="ks">Target portfolio</div></div>
+      <div class="kpi"><div class="kl">Gap to FIRE</div><div class="kv" id="kpi-gap">—</div><div class="ks" id="kpi-gap-sub">—</div></div>
+      <div class="kpi"><div class="kl">Base FIRE Age (A / B)</div><div class="kv" id="kpi-fire-age">—</div><div class="ks" id="kpi-fire-yr">—</div></div>
+      <div class="kpi"><div class="kl">Coast FIRE</div><div class="kv" id="kpi-coast">—</div><div class="ks" id="kpi-coast-sub">—</div></div>
+      <div class="kpi"><div class="kl">Healthcare Pre-65</div><div class="kv warn" id="kpi-hc">—</div><div class="ks">Annual estimate</div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Portfolio Projection — Key Scenarios</span>
+        <div class="legend">
+          <div class="li"><div class="ld" style="background:#6c63ff"></div>S1 Base</div>
+          <div class="li"><div class="ld" style="background:#00d4aa"></div>S4 Lean</div>
+          <div class="li"><div class="ld" style="background:#ffd166"></div>S5 Fat</div>
+          <div class="li"><div class="ld" style="background:#ff6b6b"></div>S6 Crash</div>
+          <div class="li"><div class="ld" style="background:#a78bfa"></div>S8 Geo</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="fire-chart"></canvas></div>
+    </div>
+
+    <!-- Scenario comparison table -->
+    <div class="scenario-card">
+      <div class="sc-hdr">Scenario Comparison</div>
+      <div class="sc-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>FIRE Number</th>
+              <th>FIRE Year</th>
+              <th>Age A / B</th>
+              <th>End Portfolio</th>
+              <th>Forfeited RSU</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="scenario-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Coast FIRE + RSU detail -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Coast FIRE &amp; RSU Summary</span></div>
+        <div id="coast-detail" style="font-size:.8rem;line-height:2;color:var(--muted)">—</div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Healthcare Cost Projection</span></div>
+        <div id="hc-detail" style="font-size:.8rem;line-height:2;color:var(--muted)">—</div>
+      </div>
+    </div>
+
+    <!-- Annual detail table (S1 base) -->
+    <div class="scenario-card">
+      <div class="sc-hdr">S1 Base Case — Annual Breakdown</div>
+      <div class="detail-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th><th>Age A / B</th><th>Portfolio</th>
+              <th>Real Portfolio</th><th>Contribution</th><th>Withdrawal</th>
+              <th>RSU Income</th><th>Healthcare</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="annual-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /out -->
+</div><!-- /layout -->
+
+<script>
+// ── Format helpers ──────────────────────────────────────────────
+const fmt = n => {
+  if (n === null || n === undefined) return '—';
+  if (n >= 1e6)  return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3)  return '$' + (n/1e3).toFixed(0)  + 'K';
+  return '$' + Math.round(n).toLocaleString();
+};
+const pct = v => (v * 100).toFixed(1) + '%';
+const num = v => v == null ? '—' : Math.round(v).toLocaleString();
+
+// ── Slider registry ─────────────────────────────────────────────
+const SLIDERS = [
+  // profile
+  { id:'age_a',            fmt: v => Math.round(v) },
+  { id:'retire_age_a',     fmt: v => Math.round(v) },
+  { id:'age_b',            fmt: v => Math.round(v) },
+  { id:'retire_age_b',     fmt: v => Math.round(v) },
+  { id:'life_expectancy',  fmt: v => Math.round(v) },
+  // comp
+  { id:'base_a',           fmt: v => fmt(v) },
+  { id:'bonus_pct_a',      fmt: v => Math.round(v) + '%' },
+  { id:'rsu_a',            fmt: v => fmt(v) },
+  { id:'rsu_years_a',      fmt: v => Math.round(v) },
+  { id:'k401_contrib_a',   fmt: v => fmt(v) },
+  { id:'base_b',           fmt: v => fmt(v) },
+  { id:'bonus_pct_b',      fmt: v => Math.round(v) + '%' },
+  { id:'rsu_b',            fmt: v => fmt(v) },
+  { id:'rsu_years_b',      fmt: v => Math.round(v) },
+  { id:'k401_contrib_b',   fmt: v => fmt(v) },
+  // assets
+  { id:'k401_a',           fmt: v => fmt(v) },
+  { id:'roth_a',           fmt: v => fmt(v) },
+  { id:'hsa_a',            fmt: v => fmt(v) },
+  { id:'k401_b',           fmt: v => fmt(v) },
+  { id:'roth_b',           fmt: v => fmt(v) },
+  { id:'hsa_b',            fmt: v => fmt(v) },
+  { id:'brokerage',        fmt: v => fmt(v) },
+  { id:'cash',             fmt: v => fmt(v) },
+  { id:'home_value',       fmt: v => fmt(v) },
+  { id:'mortgage_bal',     fmt: v => fmt(v) },
+  { id:'mortgage_pmt',     fmt: v => '$' + Math.round(v).toLocaleString() },
+  // expenses
+  { id:'expenses_now',     fmt: v => fmt(v) },
+  { id:'expenses_ret',     fmt: v => fmt(v) },
+  { id:'ss_a',             fmt: v => fmt(v) },
+  { id:'ss_b',             fmt: v => fmt(v) },
+  { id:'ss_start_age',     fmt: v => Math.round(v) },
+  { id:'kids_count',       fmt: v => Math.round(v) },
+  { id:'kids_start_years', fmt: v => Math.round(v) },
+  { id:'geo_col_reduction',fmt: v => Math.round(v) + '%' },
+  // returns
+  { id:'annual_return',    fmt: v => v.toFixed(1) + '%' },
+  { id:'inflation',        fmt: v => v.toFixed(1) + '%' },
+  { id:'swr',              fmt: v => v.toFixed(1) + '%' },
+];
+
+SLIDERS.forEach(({ id, fmt: f }) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const vEl = document.getElementById('v-' + id);
+  const refresh = () => { if (vEl) vEl.textContent = f(parseFloat(el.value)); };
+  el.addEventListener('input', () => { refresh(); debounceSim(); });
+  refresh();
+});
+
+// Checkboxes
+['sell_home','model_healthcare','include_kids'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', debounceSim);
+});
+document.getElementById('state')?.addEventListener('change', debounceSim);
+
+// ── Tab switching ────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab)?.classList.add('active');
+  });
+});
+
+// ── Collect params ───────────────────────────────────────────────
+function g(id)  { return parseFloat(document.getElementById(id)?.value ?? 0); }
+function gi(id) { return parseInt(document.getElementById(id)?.value ?? 0); }
+function gc(id) { return document.getElementById(id)?.checked ?? false; }
+function gs(id) { return document.getElementById(id)?.value ?? ''; }
+
+function collectParams() {
+  return {
+    age_a: gi('age_a'), retire_age_a: gi('retire_age_a'),
+    age_b: gi('age_b'), retire_age_b: gi('retire_age_b'),
+    life_expectancy: gi('life_expectancy'),
+    state: gs('state'),
+    base_a: g('base_a'), bonus_pct_a: g('bonus_pct_a') / 100,
+    rsu_a: g('rsu_a'),   rsu_years_a: gi('rsu_years_a'),
+    k401_contrib_a: g('k401_contrib_a'),
+    base_b: g('base_b'), bonus_pct_b: g('bonus_pct_b') / 100,
+    rsu_b: g('rsu_b'),   rsu_years_b: gi('rsu_years_b'),
+    k401_contrib_b: g('k401_contrib_b'),
+    k401_a: g('k401_a'), roth_a: g('roth_a'), hsa_a: g('hsa_a'),
+    k401_b: g('k401_b'), roth_b: g('roth_b'), hsa_b: g('hsa_b'),
+    brokerage: g('brokerage'), cash: g('cash'),
+    home_value: g('home_value'), mortgage_bal: g('mortgage_bal'),
+    mortgage_pmt: g('mortgage_pmt'),
+    sell_home: gc('sell_home'),
+    expenses_now: g('expenses_now'), expenses_ret: g('expenses_ret'),
+    ss_a: g('ss_a'), ss_b: g('ss_b'), ss_start_age: gi('ss_start_age'),
+    model_healthcare: gc('model_healthcare'),
+    include_kids: gc('include_kids'),
+    kids_count: gi('kids_count'), kids_start_years: gi('kids_start_years'),
+    geo_col_reduction: g('geo_col_reduction') / 100,
+    annual_return: g('annual_return') / 100,
+    inflation: g('inflation') / 100,
+    swr: g('swr') / 100,
+  };
+}
+
+// ── Chart ────────────────────────────────────────────────────────
+const ctx   = document.getElementById('fire-chart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets: [] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor:'#1a1d27', borderColor:'#2e3350', borderWidth:1,
+        titleColor:'#e8eaf0', bodyColor:'#7a7f9a', padding:10,
+        callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y)}` }
+      }
+    },
+    scales: {
+      x: { grid:{color:'#2e3350'}, ticks:{color:'#7a7f9a',font:{size:10}} },
+      y: { grid:{color:'#2e3350'}, ticks:{color:'#7a7f9a',font:{size:10},callback:v=>fmt(v)} }
+    }
+  }
+});
+
+// ── Render ───────────────────────────────────────────────────────
+function statusBadge(r) {
+  if (r.depletion_age_a) return `<span class="badge b-bad">Depleted @ ${r.depletion_age_a}</span>`;
+  if (r.end_portfolio > 0) return `<span class="badge b-good">Survives</span>`;
+  return `<span class="badge b-warn">Near zero</span>`;
+}
+
+function render(data) {
+  const h  = data.household;
+  const sc = data.scenarios;
+
+  // ── KPIs
+  document.getElementById('kpi-lnw').textContent = fmt(h.liquid_net_worth);
+  document.getElementById('kpi-fire').textContent = fmt(h.fire_number_base);
+
+  const gapEl = document.getElementById('kpi-gap');
+  gapEl.textContent = fmt(h.gap_to_fire);
+  gapEl.className   = 'kv ' + (h.gap_to_fire <= 0 ? 'good' : 'warn');
+  document.getElementById('kpi-gap-sub').textContent =
+    h.gap_to_fire <= 0 ? '✓ Already at FIRE!' : `${pct(h.liquid_net_worth / h.fire_number_base)} funded`;
+
+  const s1 = sc.s1;
+  const fireAgeEl = document.getElementById('kpi-fire-age');
+  if (s1.fire_age_a) {
+    fireAgeEl.textContent = `${s1.fire_age_a} / ${s1.fire_age_b}`;
+    fireAgeEl.className   = 'kv ' + (s1.fire_age_a <= collectParams().retire_age_a ? 'good' : 'warn');
+    document.getElementById('kpi-fire-yr').textContent =
+      `In ${s1.fire_reached_year} yr${s1.fire_reached_year !== 1 ? 's' : ''}`;
+  } else {
+    fireAgeEl.textContent = 'Never';
+    fireAgeEl.className   = 'kv bad';
+    document.getElementById('kpi-fire-yr').textContent = 'Increase savings or return';
+  }
+
+  const coastEl = document.getElementById('kpi-coast');
+  coastEl.textContent = fmt(s1.coast_fire_number);
+  coastEl.className   = 'kv ' + (s1.coast_fire_reached ? 'good' : 'warn');
+  document.getElementById('kpi-coast-sub').textContent =
+    s1.coast_fire_reached ? '✓ Coast FIRE reached!' : 'Not yet — keep contributing';
+
+  document.getElementById('kpi-hc').textContent = fmt(h.healthcare_pre65_annual);
+
+  // ── Chart — pick 5 key scenarios
+  const palette = { s1:'#6c63ff', s4:'#00d4aa', s5:'#ffd166', s6:'#ff6b6b', s8:'#a78bfa' };
+  const shown   = Object.keys(palette);
+  const labels  = sc.s1.years.map(y => `${y.age_a}`);
+  chart.data.labels   = labels;
+  chart.data.datasets = shown.map(k => ({
+    label: sc[k].name,
+    data:  sc[k].years.map(y => y.portfolio),
+    borderColor:     palette[k],
+    backgroundColor: 'transparent',
+    tension:0.3, pointRadius:0, borderWidth:2,
+  }));
+  chart.update('none');
+
+  // ── Scenario table
+  const tbody = document.getElementById('scenario-tbody');
+  tbody.innerHTML = '';
+  Object.values(sc).forEach(r => {
+    const depleted = !!r.depletion_age_a;
+    const tr = document.createElement('tr');
+    if (depleted) tr.classList.add('bad-row');
+    tr.innerHTML = `
+      <td>${r.name}</td>
+      <td>${fmt(r.fire_number)}</td>
+      <td>${r.fire_reached_year != null ? '+' + r.fire_reached_year + ' yr' : '—'}</td>
+      <td>${r.fire_age_a != null ? r.fire_age_a + ' / ' + r.fire_age_b : '—'}</td>
+      <td>${fmt(r.end_portfolio)}</td>
+      <td>${r.forfeited_rsu > 0 ? fmt(r.forfeited_rsu) : '—'}</td>
+      <td>${statusBadge(r)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ── Coast + RSU detail
+  const coastHtml = `
+    <b style="color:var(--text)">Coast FIRE Number</b>&nbsp; ${fmt(s1.coast_fire_number)}<br/>
+    <b style="color:var(--text)">Current Portfolio</b>&nbsp; ${fmt(h.liquid_net_worth)}<br/>
+    <b style="color:var(--text)">Status</b>&nbsp;
+      ${s1.coast_fire_reached
+        ? '<span class="badge b-good">✓ Coast FIRE reached — could downshift now</span>'
+        : '<span class="badge b-warn">Not yet coast FIRE</span>'}<br/><br/>
+    <b style="color:var(--text)">Unvested RSUs (A + B)</b>&nbsp; ${fmt(h.unvested_rsu_total)}<br/>
+    <b style="color:var(--text)">Forfeited if retiring now</b>&nbsp; ${fmt(s1.forfeited_rsu)}<br/>
+    <span style="font-size:.72rem">RSU harvest window: retire after major vest cliff to minimise forfeit.</span>
+  `;
+  document.getElementById('coast-detail').innerHTML = coastHtml;
+
+  // ── Healthcare detail
+  const p = collectParams();
+  const pre65 = h.healthcare_pre65_annual;
+  const postA = 5_400 * 2;   // both on Medicare
+  const hcHtml = `
+    <b style="color:var(--text)">Pre-65 ACA (couple)</b>&nbsp; ${fmt(pre65)}/yr<br/>
+    <b style="color:var(--text)">Post-65 Medicare</b>&nbsp; ~${fmt(postA)}/yr<br/>
+    <b style="color:var(--text)">10-yr pre-Medicare cost</b>&nbsp; ${fmt(pre65 * 10)}<br/><br/>
+    <span style="font-size:.72rem">ACA subsidies apply if MAGI &lt; 400 % FPL (~$80 K for couple).
+    Roth/TRAD mix and capital gains management can reduce effective cost.</span>
+  `;
+  document.getElementById('hc-detail').innerHTML = hcHtml;
+
+  // ── Annual detail table (S1)
+  const atbody = document.getElementById('annual-tbody');
+  atbody.innerHTML = '';
+  s1.years.forEach(y => {
+    const tr = document.createElement('tr');
+    if (y.fire_reached) tr.classList.add('fire-row');
+    if (y.depleted)     tr.classList.add('bad-row');
+    let badge = '';
+    if (y.fire_reached) badge = '<span class="badge b-good">FIRE</span>';
+    if (y.a_retired && y.b_retired && y.year === 0) badge += '';
+    if (y.depleted) badge = '<span class="badge b-bad">DEPLETED</span>';
+    tr.innerHTML = `
+      <td>${y.year}</td>
+      <td>${y.age_a} / ${y.age_b}</td>
+      <td>${fmt(y.portfolio)}</td>
+      <td>${fmt(y.real_portfolio)}</td>
+      <td>${y.contribution > 100 ? fmt(y.contribution) : '—'}</td>
+      <td>${y.withdrawal  > 100 ? fmt(y.withdrawal)  : '—'}</td>
+      <td>${y.rsu_income  > 100 ? fmt(y.rsu_income)  : '—'}</td>
+      <td>${y.healthcare_cost > 100 ? fmt(y.healthcare_cost) : '—'}</td>
+      <td>${badge}</td>
+    `;
+    atbody.appendChild(tr);
+  });
+}
+
+// ── API call ─────────────────────────────────────────────────────
+let timer = null;
+function debounceSim() { clearTimeout(timer); timer = setTimeout(callApi, 100); }
+
+async function callApi() {
+  try {
+    const res  = await fetch('/simulate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(collectParams())
+    });
+    const data = await res.json();
+    if (data.error) { console.error(data.error); return; }
+    render(data);
+  } catch(e) { console.error('API error:', e); }
+}
+
+callApi();
+</script>
+</body>
+</html>
