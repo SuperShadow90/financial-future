@@ -24,6 +24,9 @@
               grid-template-columns:360px 1fr; gap:18px; align-items:start; }
     @media(max-width:900px){ .layout{grid-template-columns:1fr;} }
 
+    /* ── LEFT COLUMN ── */
+    .left-col { display:flex; flex-direction:column; gap:14px; }
+
     /* ── INPUT PANEL ── */
     .input-panel { background:var(--surface); border:1px solid var(--border);
                    border-radius:var(--r); overflow:hidden; }
@@ -170,7 +173,9 @@
 
 <div class="layout">
 
-  <!-- ══════════ INPUT PANEL ══════════ -->
+  <!-- ══════════ LEFT COLUMN ══════════ -->
+  <div class="left-col">
+  <!-- Input Panel -->
   <div class="input-panel">
     <div class="tabs">
       <button class="tab-btn active" data-tab="profile">Profile</button>
@@ -178,24 +183,17 @@
       <button class="tab-btn" data-tab="assets">Assets</button>
       <button class="tab-btn" data-tab="expenses">Expenses</button>
       <button class="tab-btn" data-tab="returns">Returns</button>
-      <button class="tab-btn" data-tab="scenarios">Scenarios</button>
     </div>
 
     <!-- TAB: Profile & Timeline -->
     <div class="tab-pane active" id="tab-profile">
       <div class="section-label">Person A</div>
-      <div class="field-row"><span class="field-label">Name</span>
-        <div class="field-wrap"><input type="text" id="name_a" value="Shadow"
-          style="background:transparent;border:none;color:var(--text);font-size:.85rem;font-weight:600;padding:5px 10px;width:120px;outline:none;" /></div></div>
       <div class="field-row"><span class="field-label">Current Age</span>
         <div class="field-wrap"><input type="number" id="age_a" value="36" min="18" max="70"/></div></div>
       <div class="field-row"><span class="field-label">Target Retire Age</span>
         <div class="field-wrap"><input type="number" id="retire_age_a" value="50" min="30" max="75"/></div></div>
       <hr class="div"/>
       <div class="section-label">Person B</div>
-      <div class="field-row"><span class="field-label">Name</span>
-        <div class="field-wrap"><input type="text" id="name_b" value="Bailan"
-          style="background:transparent;border:none;color:var(--text);font-size:.85rem;font-weight:600;padding:5px 10px;width:120px;outline:none;" /></div></div>
       <div class="field-row"><span class="field-label">Current Age</span>
         <div class="field-wrap"><input type="number" id="age_b" value="36" min="18" max="70"/></div></div>
       <div class="field-row"><span class="field-label">Target Retire Age</span>
@@ -329,80 +327,6 @@
       <p class="note">S8 applies this reduction to retirement spending to model relocating to a lower-cost area.</p>
     </div>
 
-    <!-- TAB: Scenarios -->
-    <div class="tab-pane" id="tab-scenarios">
-      <div class="sc-item">
-        <div class="sc-tag">S1</div>
-        <div>
-          <div class="sc-name">Base Case</div>
-          <div class="sc-desc">Both partners work until the portfolio hits the FIRE number. No kids, no life disruptions. This is the benchmark all other scenarios are compared against.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S2</div>
-        <div>
-          <div class="sc-name">Sequential FIRE</div>
-          <div class="sc-desc">Person A retires at their target age while Person B keeps working 3 more years. The second income covers expenses and lets the portfolio grow untouched — often a much easier path than both retiring simultaneously.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S3</div>
-        <div>
-          <div class="sc-name">With Kids</div>
-          <div class="sc-desc">Adds child-rearing costs: ~$20K/yr ages 0–5, $15K/yr ages 6–17, and $40K/yr for college (ages 18–21). Configure the number of kids and start year in the Expenses tab. Shows how many years kids push back the FIRE date.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S4</div>
-        <div>
-          <div class="sc-name">Lean FIRE</div>
-          <div class="sc-desc">Cuts retirement spending by 30% below your target. Models a frugal retirement — fewer vacations, smaller home, lower discretionary spending. Dramatically lowers the FIRE number and accelerates the timeline.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S5</div>
-        <div>
-          <div class="sc-name">Fat FIRE</div>
-          <div class="sc-desc">Targets 150% of your retirement spend (minimum $150K/yr). Models an affluent retirement with travel, dining, and lifestyle upgrades. Requires a much larger portfolio and longer working years.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag sc-tag-warn">S6</div>
-        <div>
-          <div class="sc-name">Sequence-of-Returns Risk</div>
-          <div class="sc-desc">Simulates a 35% market crash in year 1 of retirement — the worst-case timing. Retiring into a bear market can permanently impair a portfolio. If this scenario still shows the portfolio surviving to life expectancy, the plan is robust.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S7</div>
-        <div>
-          <div class="sc-name">Coast FIRE</div>
-          <div class="sc-desc">Calculates whether you could stop contributing today and let compounding alone grow the portfolio to your FIRE number by your target retire age. If you've hit Coast FIRE, you could downshift to a lower-stress or part-time job now.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S8</div>
-        <div>
-          <div class="sc-name">Geographic Arbitrage</div>
-          <div class="sc-desc">Applies the COL reduction (set in Expenses tab) to retirement spending — modeling a move to a lower-cost city, state, or country (e.g. Portugal, Mexico, Southeast Asia, or a lower-cost US metro). Can shave years off the timeline.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S9</div>
-        <div>
-          <div class="sc-name">Mortgage Paid Off</div>
-          <div class="sc-desc">Models retiring with no mortgage payment. Reduces retirement expenses by roughly the interest portion of your monthly payment. Compare against S1 to see whether paying off the mortgage early beats investing the difference.</div>
-        </div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag sc-tag-warn">S10</div>
-        <div>
-          <div class="sc-name">Layoff Disruption</div>
-          <div class="sc-desc">Person A loses their job in year 1 for 12 months — zero income, zero RSU vesting. Shows the FIRE date impact of a single tech layoff. If both partners were laid off simultaneously, the effect would roughly double.</div>
-        </div>
-      </div>
-    </div>
-
     <!-- TAB: Returns & Assumptions -->
     <div class="tab-pane" id="tab-returns">
       <div class="pg"><div class="pl"><span>Annual Nominal Return</span><span class="pv" id="v-annual_return">7.0%</span></div>
@@ -423,6 +347,66 @@
       </p>
     </div>
   </div>
+
+  <!-- ══════════ SCENARIO GUIDE CARD ══════════ -->
+  <div class="panel" style="padding:0;overflow:hidden;">
+    <div style="padding:12px 18px 10px;border-bottom:1px solid var(--border);
+                font-size:.75rem;font-weight:600;text-transform:uppercase;
+                letter-spacing:.8px;color:var(--muted);">Scenario Guide</div>
+    <div style="padding:16px 18px;max-height:420px;overflow-y:auto;">
+      <div class="sc-item">
+        <div class="sc-tag">S1</div>
+        <div><div class="sc-name">Base Case</div>
+        <div class="sc-desc">Both partners work until the portfolio hits the FIRE number. No kids, no disruptions. The benchmark all other scenarios are compared against.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S2</div>
+        <div><div class="sc-name">Sequential FIRE</div>
+        <div class="sc-desc">Person A retires first; Person B works 3 more years. The remaining income covers expenses and lets the portfolio grow untouched.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S3</div>
+        <div><div class="sc-name">With Kids</div>
+        <div class="sc-desc">Adds child costs: ~$20K/yr ages 0–5, $15K/yr ages 6–17, $40K/yr college. Configure count and start year in Expenses tab.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S4</div>
+        <div><div class="sc-name">Lean FIRE</div>
+        <div class="sc-desc">Retirement spend cut by 30%. Frugal lifestyle — fewer vacations, lower discretionary. Dramatically lowers the FIRE number and timeline.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S5</div>
+        <div><div class="sc-name">Fat FIRE</div>
+        <div class="sc-desc">Targets 150% of retirement spend (min $150K/yr). Affluent retirement with travel and lifestyle upgrades. Larger portfolio and longer runway required.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag sc-tag-warn">S6</div>
+        <div><div class="sc-name">Sequence-of-Returns Risk</div>
+        <div class="sc-desc">35% market crash in year 1 of retirement. Worst-case timing. If the portfolio still survives to life expectancy here, the plan is robust.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S7</div>
+        <div><div class="sc-name">Coast FIRE</div>
+        <div class="sc-desc">Can you stop contributing now and coast to FIRE purely via compounding? If yes, you could downshift to a lower-stress job today.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S8</div>
+        <div><div class="sc-name">Geographic Arbitrage</div>
+        <div class="sc-desc">Applies the COL reduction from Expenses tab to retirement spend. Models moving to a lower-cost city, state, or country (Portugal, Mexico, SE Asia…).</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag">S9</div>
+        <div><div class="sc-name">Mortgage Paid Off</div>
+        <div class="sc-desc">Retire mortgage-free. Reduces retirement expenses by the interest portion of the monthly payment. Compare vs S1 to judge payoff vs invest tradeoff.</div></div>
+      </div>
+      <div class="sc-item">
+        <div class="sc-tag sc-tag-warn">S10</div>
+        <div><div class="sc-name">Layoff Disruption</div>
+        <div class="sc-desc">Person A loses job for 12 months in year 1 — zero income, zero RSU vesting. Shows how a single tech layoff shifts the FIRE date.</div></div>
+      </div>
+    </div>
+  </div>
+  </div><!-- /left-col -->
 
   <!-- ══════════ OUTPUT ══════════ -->
   <div class="out">
@@ -526,18 +510,6 @@ const NUMBER_INPUTS = [
 ];
 NUMBER_INPUTS.forEach(id => {
   document.getElementById(id)?.addEventListener('input', debounceSim);
-});
-
-// Name fields update comp table headers + trigger sim
-['name_a','name_b'].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('input', () => {
-    const suffix = id === 'name_a' ? 'a' : 'b';
-    const headEl = document.getElementById('comp-head-' + suffix);
-    if (headEl) headEl.textContent = el.value || (suffix === 'a' ? 'Person A' : 'Person B');
-    debounceSim();
-  });
 });
 
 // ── Slider registry (Expenses + Returns only) ────────────────────
@@ -783,7 +755,36 @@ async function callApi() {
   } catch(e) { console.error('API error:', e); }
 }
 
-callApi();
+// ── Load config defaults, then run simulation ─────────────────
+async function loadConfig() {
+  try {
+    const res = await fetch('/config');
+    const cfg = await res.json();
+    if (cfg.error) throw new Error(cfg.error);
+
+    const sliderIds = new Set(SLIDERS.map(s => s.id));
+
+    Object.entries(cfg).forEach(([key, val]) => {
+      const el = document.getElementById(key);
+      if (!el) return;
+      if (el.type === 'checkbox') {
+        el.checked = Boolean(val);
+      } else {
+        el.value = val;
+        if (sliderIds.has(key)) {
+          const entry = SLIDERS.find(s => s.id === key);
+          const vEl   = document.getElementById('v-' + key);
+          if (entry && vEl) vEl.textContent = entry.fmt(parseFloat(el.value));
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('Could not load /config defaults:', e);
+  }
+  callApi();
+}
+
+loadConfig();
 </script>
 </body>
 </html>

@@ -1,0 +1,56 @@
+{
+  "_comment": "Percentage fields (annual_return, inflation, swr, bonus_pct_*, geo_col_reduction) stored as fractions (0.07 = 7%). The /config endpoint multiplies them by 100 for the UI sliders.",
+
+  "person_a": {
+    "age":               36,
+    "retire_age":        50,
+    "base_salary":       200000,
+    "bonus_pct":         0.15,
+    "unvested_rsu":      200000,
+    "rsu_vesting_years": 4,
+    "k401_balance":      200000,
+    "roth_balance":      50000,
+    "hsa_balance":       10000,
+    "k401_contribution": 23500,
+    "hsa_contribution":  4275,
+    "ss_benefit":        24000
+  },
+
+  "person_b": {
+    "age":               36,
+    "retire_age":        50,
+    "base_salary":       180000,
+    "bonus_pct":         0.15,
+    "unvested_rsu":      150000,
+    "rsu_vesting_years": 4,
+    "k401_balance":      150000,
+    "roth_balance":      40000,
+    "hsa_balance":       8000,
+    "k401_contribution": 23500,
+    "hsa_contribution":  4275,
+    "ss_benefit":        20000
+  },
+
+  "household": {
+    "life_expectancy":          90,
+    "state":                    "CA",
+    "brokerage_balance":        300000,
+    "cash_balance":             100000,
+    "home_value":               1500000,
+    "mortgage_balance":         800000,
+    "mortgage_monthly_payment": 5000,
+    "mortgage_years_remaining": 25,
+    "sell_home_at_retirement":  false,
+    "annual_expenses_current":  120000,
+    "annual_expenses_retirement": 200000,
+    "annual_return":            0.07,
+    "inflation":                0.03,
+    "swr":                      0.035,
+    "ss_start_age":             67,
+    "model_healthcare":         true,
+    "include_kids":             false,
+    "kids_count":               1,
+    "kids_start_years":         2,
+    "geo_col_reduction":        0.35
+  }
+}

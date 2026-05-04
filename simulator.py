@@ -19,6 +19,17 @@ All dollar values are nominal unless labelled _real.
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional
+import json, os
+
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+
+def _load_config() -> dict:
+    """Load config.json; return empty dict if missing."""
+    try:
+        with open(_CONFIG_PATH) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
 
 
 # ─────────────────────────────────────────────────────────
@@ -551,57 +562,72 @@ def results_to_dict(p: HouseholdParams, scenarios: dict[str, ScenarioResult]) ->
 # ─────────────────────────────────────────────────────────
 
 def dict_to_household(d: dict) -> HouseholdParams:
+    """
+    Build HouseholdParams from an API request dict.
+    Priority: request values → config.json → hardcoded fallbacks.
+    config.json stores fractions for % fields (0.07 = 7 %); the API receives
+    the same fraction format (collectParams divides by 100 before POSTing).
+    """
+    cfg  = _load_config()
+    ca   = cfg.get("person_a",  {})
+    cb   = cfg.get("person_b",  {})
+    chh  = cfg.get("household", {})
+
+    def va(key, fb):   return d.get(key,         ca.get(key,  fb))
+    def vb(key, fb):   return d.get(key,         cb.get(key,  fb))
+    def vh(key, fb):   return d.get(key,         chh.get(key, fb))
+
     pa = PersonParams(
         name              = "Person A",
-        age               = int(d.get("age_a",             36)),
-        retire_age        = int(d.get("retire_age_a",       50)),
-        base_salary       = float(d.get("base_a",      200_000)),
-        bonus_target_pct  = float(d.get("bonus_pct_a",    0.15)),
-        unvested_rsu      = float(d.get("rsu_a",       200_000)),
-        rsu_vesting_years = int(d.get("rsu_years_a",         4)),
-        k401_balance      = float(d.get("k401_a",      200_000)),
-        roth_balance      = float(d.get("roth_a",       50_000)),
-        hsa_balance       = float(d.get("hsa_a",        10_000)),
-        k401_contribution = float(d.get("k401_contrib_a", 23_500)),
-        hsa_contribution  = float(d.get("hsa_contrib_a",  4_275)),
-        ss_benefit        = float(d.get("ss_a",          24_000)),
+        age               = int(va("age_a",             36)),
+        retire_age        = int(va("retire_age_a",       50)),
+        base_salary       = float(va("base_a",      200_000)),
+        bonus_target_pct  = float(va("bonus_pct_a",    0.15)),
+        unvested_rsu      = float(va("rsu_a",       200_000)),
+        rsu_vesting_years = int(va("rsu_years_a",         4)),
+        k401_balance      = float(va("k401_a",      200_000)),
+        roth_balance      = float(va("roth_a",       50_000)),
+        hsa_balance       = float(va("hsa_a",        10_000)),
+        k401_contribution = float(va("k401_contrib_a", 23_500)),
+        hsa_contribution  = float(ca.get("hsa_contribution", 4_275)),
+        ss_benefit        = float(va("ss_a",          24_000)),
     )
     pb = PersonParams(
         name              = "Person B",
-        age               = int(d.get("age_b",             36)),
-        retire_age        = int(d.get("retire_age_b",       50)),
-        base_salary       = float(d.get("base_b",      180_000)),
-        bonus_target_pct  = float(d.get("bonus_pct_b",    0.15)),
-        unvested_rsu      = float(d.get("rsu_b",       150_000)),
-        rsu_vesting_years = int(d.get("rsu_years_b",         4)),
-        k401_balance      = float(d.get("k401_b",      150_000)),
-        roth_balance      = float(d.get("roth_b",       40_000)),
-        hsa_balance       = float(d.get("hsa_b",         8_000)),
-        k401_contribution = float(d.get("k401_contrib_b", 23_500)),
-        hsa_contribution  = float(d.get("hsa_contrib_b",  4_275)),
-        ss_benefit        = float(d.get("ss_b",          20_000)),
+        age               = int(vb("age_b",             36)),
+        retire_age        = int(vb("retire_age_b",       50)),
+        base_salary       = float(vb("base_b",      180_000)),
+        bonus_target_pct  = float(vb("bonus_pct_b",    0.15)),
+        unvested_rsu      = float(vb("rsu_b",       150_000)),
+        rsu_vesting_years = int(vb("rsu_years_b",         4)),
+        k401_balance      = float(vb("k401_b",      150_000)),
+        roth_balance      = float(vb("roth_b",       40_000)),
+        hsa_balance       = float(vb("hsa_b",         8_000)),
+        k401_contribution = float(vb("k401_contrib_b", 23_500)),
+        hsa_contribution  = float(cb.get("hsa_contribution", 4_275)),
+        ss_benefit        = float(vb("ss_b",          20_000)),
     )
     return HouseholdParams(
         person_a                 = pa,
         person_b                 = pb,
-        life_expectancy          = int(d.get("life_expectancy",       90)),
-        state                    = str(d.get("state",               "CA")),
-        brokerage_balance        = float(d.get("brokerage",      300_000)),
-        cash_balance             = float(d.get("cash",           100_000)),
-        home_value               = float(d.get("home_value",   1_500_000)),
-        mortgage_balance         = float(d.get("mortgage_bal",   800_000)),
-        mortgage_monthly_payment = float(d.get("mortgage_pmt",     5_000)),
-        mortgage_years_remaining = int(d.get("mortgage_years",        25)),
-        sell_home_at_retirement  = bool(d.get("sell_home",          False)),
-        annual_expenses_current  = float(d.get("expenses_now",   120_000)),
-        annual_expenses_retirement = float(d.get("expenses_ret", 200_000)),
-        annual_return            = float(d.get("annual_return",     0.07)),
-        inflation                = float(d.get("inflation",         0.03)),
-        swr                      = float(d.get("swr",               0.035)),
-        ss_start_age             = int(d.get("ss_start_age",           67)),
-        model_healthcare         = bool(d.get("model_healthcare",    True)),
-        include_kids             = bool(d.get("include_kids",        False)),
-        kids_count               = int(d.get("kids_count",              1)),
-        kids_start_years         = int(d.get("kids_start_years",        2)),
-        geo_col_reduction        = float(d.get("geo_col_reduction",  0.35)),
+        life_expectancy          = int(vh("life_expectancy",       90)),
+        state                    = str(vh("state",               "CA")),
+        brokerage_balance        = float(vh("brokerage",      300_000)),
+        cash_balance             = float(vh("cash",           100_000)),
+        home_value               = float(vh("home_value",   1_500_000)),
+        mortgage_balance         = float(vh("mortgage_bal",   800_000)),
+        mortgage_monthly_payment = float(vh("mortgage_pmt",     5_000)),
+        mortgage_years_remaining = int(chh.get("mortgage_years_remaining", 25)),
+        sell_home_at_retirement  = bool(vh("sell_home",          False)),
+        annual_expenses_current  = float(vh("expenses_now",   120_000)),
+        annual_expenses_retirement = float(vh("expenses_ret", 200_000)),
+        annual_return            = float(vh("annual_return",     0.07)),
+        inflation                = float(vh("inflation",         0.03)),
+        swr                      = float(vh("swr",               0.035)),
+        ss_start_age             = int(vh("ss_start_age",           67)),
+        model_healthcare         = bool(vh("model_healthcare",    True)),
+        include_kids             = bool(vh("include_kids",        False)),
+        kids_count               = int(vh("kids_count",              1)),
+        kids_start_years         = int(vh("kids_start_years",        2)),
+        geo_col_reduction        = float(vh("geo_col_reduction",  0.35)),
     )
