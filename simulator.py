@@ -36,33 +36,32 @@ def _load_config() -> dict:
 # Tax helpers
 # ─────────────────────────────────────────────────────────
 
-STATE_TAX: dict[str, float] = {
-    "CA": 0.093, "NY": 0.0685, "OR": 0.090, "MN": 0.0985,
-    "WA": 0.000, "TX": 0.000,  "FL": 0.000, "NV": 0.000,
-    "AZ": 0.025, "CO": 0.044,  "GA": 0.055, "NC": 0.0499,
-    "MA": 0.050, "IL": 0.0495, "OH": 0.040, "MI": 0.0425,
-    "VA": 0.0575,"PA": 0.0307, "NJ": 0.0637,"CT": 0.0699,
-}
+# Flat combined tax rate (federal + state + FICA) applied to all gross income
+_FLAT_TAX_RATE = 0.50
 
-def _federal_eff_rate(gross: float) -> float:
-    """Simplified federal effective income tax rate."""
-    if gross <= 100_000:  return 0.18
-    if gross <= 200_000:  return 0.22
-    if gross <= 400_000:  return 0.28
-    if gross <= 700_000:  return 0.32
-    return 0.35
 
-def _state_rate(state: str) -> float:
-    return STATE_TAX.get(state.upper(), 0.05)
+def _person_total_tax(w2_gross: float, rsu_gross: float,
+                      k401: float, hsa: float, state: str) -> float:
+    """Total tax on all gross income at a flat 50% rate."""
+    total_gross = w2_gross + rsu_gross
+    return total_gross * _FLAT_TAX_RATE
+
+
+# ── Helpers used by simulation loop and public API ────────────────────────────
 
 def income_after_tax(gross: float, state: str) -> float:
-    rate = min(_federal_eff_rate(gross) + _state_rate(state), 0.55)
-    return gross * (1.0 - rate)
+    return gross * (1 - _FLAT_TAX_RATE)
 
-def rsu_after_tax(gross: float, state: str) -> float:
-    """RSUs taxed as ordinary income at marginal federal rate (37 %)."""
-    rate = min(0.37 + _state_rate(state), 0.58)
-    return gross * (1.0 - rate)
+def income_tax(gross: float, state: str) -> float:
+    return gross * _FLAT_TAX_RATE
+
+def rsu_after_tax(gross_rsu: float, state: str, w2_gross: float = 0.0,
+                  k401: float = 0.0, hsa: float = 0.0) -> float:
+    return gross_rsu * (1 - _FLAT_TAX_RATE)
+
+def rsu_tax(gross_rsu: float, state: str, w2_gross: float = 0.0,
+            k401: float = 0.0, hsa: float = 0.0) -> float:
+    return gross_rsu * _FLAT_TAX_RATE
 
 
 # ─────────────────────────────────────────────────────────
@@ -87,9 +86,9 @@ def healthcare_annual(age_a: int, age_b: int) -> float:
 def kids_cost_annual(years_from_now: int, count: int, start_year: int) -> float:
     """
     Cost per child (today's dollars):
-      Ages  0–5   $20 K/yr
-      Ages  6–17  $15 K/yr
-      Ages 18–21  $40 K/yr  (college)
+      Ages  0–5   $100 K/yr
+      Ages  6–17  $100 K/yr
+      Ages 18–21  $100 K/yr  (college)
     Children staggered by 1 year each.
     """
     total = 0.0
@@ -97,9 +96,9 @@ def kids_cost_annual(years_from_now: int, count: int, start_year: int) -> float:
         birth_yr = start_year + k
         kid_age  = years_from_now - birth_yr
         if   kid_age < 0:   pass
-        elif kid_age <= 5:  total += 20_000
-        elif kid_age <= 17: total += 15_000
-        elif kid_age <= 21: total += 40_000
+        elif kid_age <= 5:  total += 100_000
+        elif kid_age <= 17: total += 100_000
+        elif kid_age <= 21: total += 100_000
     return total
 
 
@@ -201,6 +200,9 @@ class YearSnapshot:
     depleted: bool       = False
     rsu_income: float    = 0.0
     healthcare_cost: float = 0.0
+    annual_expenses: float = 0.0
+    annual_savings: float  = 0.0
+    annual_taxes: float    = 0.0
 
 
 @dataclass
@@ -233,21 +235,40 @@ def liquid_portfolio(p: HouseholdParams) -> float:
     )
 
 
-def _rsu_net_this_year(person: PersonParams, yr: int, state: str) -> float:
-    if person.rsu_vesting_years <= 0 or yr >= person.rsu_vesting_years:
-        return 0.0
-    gross = person.unvested_rsu / person.rsu_vesting_years
-    return rsu_after_tax(gross, state)
+def _person_annual(person: PersonParams, yr: int, state: str) -> tuple[float, float, float]:
+    """
+    Compute annual income figures for one working person.
+    Returns (net_to_portfolio, total_tax, rsu_gross_vest).
+
+    All income — base, bonus, RSU vest — is taxed together in a single calculation
+    so each component is taxed at the correct marginal rate.
+    net_to_portfolio includes after-tax take-home + pre-tax 401k + HSA savings.
+    """
+    bonus     = person.base_salary * person.bonus_target_pct * 0.80
+    w2_gross  = person.base_salary + bonus
+    rsu_gross = (person.unvested_rsu / person.rsu_vesting_years
+                 if person.rsu_vesting_years > 0 and yr < person.rsu_vesting_years
+                 else 0.0)
+    total_gross = w2_gross + rsu_gross
+
+    total_tax   = _person_total_tax(w2_gross, rsu_gross,
+                                    person.k401_contribution, person.hsa_contribution, state)
+
+    # After-tax take-home (excl. pre-tax deductions already withheld)
+    take_home       = total_gross - total_tax - person.k401_contribution - person.hsa_contribution
+    # Pre-tax savings (401k + HSA) still go into the portfolio, just tax-deferred
+    net_to_portfolio = take_home + person.k401_contribution + person.hsa_contribution
+
+    return net_to_portfolio, total_tax, rsu_gross
 
 
 def _w2_net_annual(person: PersonParams, state: str) -> float:
-    """After-tax W-2 income (base + realistic bonus), after 401 k + HSA deductions."""
+    """W-2-only after-tax net (used in results_to_dict annual savings estimate)."""
     bonus    = person.base_salary * person.bonus_target_pct * 0.80
-    gross    = person.base_salary + bonus
-    taxable  = gross - person.k401_contribution - person.hsa_contribution
-    net      = income_after_tax(taxable, state)
-    # 401 k + HSA are still saved (pre-tax); add back as portfolio contributions
-    return net + person.k401_contribution + person.hsa_contribution
+    w2_gross = person.base_salary + bonus
+    tax      = _person_total_tax(w2_gross, 0.0, person.k401_contribution,
+                                 person.hsa_contribution, state)
+    return w2_gross - tax   # take-home; 401k/HSA not added back (savings estimate only)
 
 
 def _rsu_forfeited(person: PersonParams, retire_age: int) -> float:
@@ -297,6 +318,11 @@ def simulate(
     mortgage_bal  = p.mortgage_balance
     home_sold     = False
 
+    # Track pre-tax (401k) fraction of portfolio for retirement withdrawal grossing-up.
+    # Roth + HSA + brokerage + cash are after-tax; 401k is pre-tax ordinary income on withdrawal.
+    pretax_start  = pa.k401_balance + pb.k401_balance
+    pretax_ratio  = pretax_start / portfolio if portfolio > 0 else 0.0
+
     coast_reached      = portfolio >= coast_fire_number
     fire_reached_year: Optional[int] = None
     fire_age_a:        Optional[int] = None
@@ -320,9 +346,6 @@ def simulate(
         a_off  = (layoff_who in ("a", "both") and layoff_start_yr <= yr < layoff_start_yr + layoff_duration)
         b_off  = (layoff_who in ("b", "both") and layoff_start_yr <= yr < layoff_start_yr + layoff_duration)
 
-        # RSU vesting (forfeited if retired or laid off)
-        rsu_a = 0.0 if (a_ret or a_off) else _rsu_net_this_year(pa, yr, p.state)
-        rsu_b = 0.0 if (b_ret or b_off) else _rsu_net_this_year(pb, yr, p.state)
 
         # Annual return (crash scenario)
         this_r = -0.35 if (crash_on_year is not None and yr == crash_on_year) else r_nominal
@@ -339,20 +362,36 @@ def simulate(
 
         # ── Accumulation phase ───────────────────────────────
         if not both:
-            inc_a = _w2_net_annual(pa, p.state) if (not a_ret and not a_off) else 0.0
-            inc_b = _w2_net_annual(pb, p.state) if (not b_ret and not b_off) else 0.0
+            # All income components (base + bonus + RSU) taxed together per person
+            if not a_ret and not a_off:
+                net_a, tax_a, rsu_gross_a = _person_annual(pa, yr, p.state)
+            else:
+                net_a, tax_a, rsu_gross_a = 0.0, 0.0, 0.0
+
+            if not b_ret and not b_off:
+                net_b, tax_b, rsu_gross_b = _person_annual(pb, yr, p.state)
+            else:
+                net_b, tax_b, rsu_gross_b = 0.0, 0.0, 0.0
+
+            # Inflate taxes to nominal dollars
+            snap_taxes = (tax_a + tax_b) * infl
+
+            # rsu_a / rsu_b: gross RSU vest (inflated) shown in RSU Income column
+            rsu_a = rsu_gross_a * infl
+            rsu_b = rsu_gross_b * infl
 
             kids_cost = kids_cost_annual(yr, p.kids_count, p.kids_start_years) * infl if do_kids else 0.0
             total_expenses = p.annual_expenses_current * infl + kids_cost
 
-            # Mortgage principal repayment is a balance-sheet transfer, not an expense;
-            # only add the mortgage payment as cash outflow if it's not already in expenses.
-            # (Assume annual_expenses_current includes the interest portion.)
-            net_contrib = inc_a + inc_b + rsu_a + rsu_b - total_expenses
+            # net_a / net_b already include post-tax take-home + pre-tax 401k/HSA savings
+            net_contrib = net_a + net_b - total_expenses
 
             portfolio = portfolio * (1 + this_r) + net_contrib
             contribution = max(0.0, net_contrib)
             withdrawal   = 0.0
+            snap_expenses = total_expenses
+            # Savings = total income after tax − expenses (can be negative)
+            snap_savings  = (net_a + net_b) - total_expenses
 
         # ── Withdrawal phase ─────────────────────────────────
         else:
@@ -365,12 +404,27 @@ def simulate(
             ss_a = pa.ss_benefit * infl * 0.80 if age_a >= p.ss_start_age else 0.0
             ss_b = pb.ss_benefit * infl * 0.80 if age_b >= p.ss_start_age else 0.0
 
-            gross_need    = ret_exp * infl + hc_cost + payment
-            net_withdraw  = max(0.0, gross_need - ss_a - ss_b)
+            # Net spending needed from portfolio after Social Security offsets
+            spending_need = max(0.0, ret_exp * infl + hc_cost + payment - ss_a - ss_b)
+
+            # Gross up for taxes: pre-tax 401k withdrawals are taxed as ordinary income;
+            # after-tax (Roth/brokerage) withdrawals have no additional tax burden.
+            # Effective withdrawal tax rate = pretax_ratio × (federal_eff + state).
+            ret_ord_rate  = _FLAT_TAX_RATE
+            blended_rate  = pretax_ratio * ret_ord_rate          # weighted by pre-tax fraction
+            # gross_withdraw is what must leave the portfolio to net spending_need after tax
+            gross_withdraw = spending_need / (1.0 - blended_rate) if blended_rate < 1.0 else spending_need
+            ret_tax        = gross_withdraw - spending_need
+
+            net_withdraw  = gross_withdraw
+            snap_taxes    = ret_tax
 
             portfolio    = portfolio * (1 + this_r) - net_withdraw
             contribution = 0.0
             withdrawal   = net_withdraw
+            snap_expenses = ret_exp * infl + hc_cost + payment
+            snap_savings  = 0.0
+            rsu_a, rsu_b  = 0.0, 0.0
 
         # ── Milestones ───────────────────────────────────────
         fire_nom       = fire_number * infl
@@ -403,6 +457,9 @@ def simulate(
             depleted=depleted,
             rsu_income=rsu_a + rsu_b,
             healthcare_cost=hc_cost,
+            annual_expenses=snap_expenses,
+            annual_savings=snap_savings,
+            annual_taxes=snap_taxes,
         ))
 
     forfeited = _rsu_forfeited(pa, retire_a) + _rsu_forfeited(pb, retire_b)
@@ -516,7 +573,6 @@ def _scenario_to_dict(r: ScenarioResult) -> dict:
                 "age_b":          y.age_b,
                 "portfolio":      y.portfolio,
                 "real_portfolio": y.real_portfolio,
-                "contribution":   y.contribution,
                 "withdrawal":     y.withdrawal,
                 "a_retired":      y.a_retired,
                 "b_retired":      y.b_retired,
@@ -524,6 +580,9 @@ def _scenario_to_dict(r: ScenarioResult) -> dict:
                 "depleted":       y.depleted,
                 "rsu_income":     y.rsu_income,
                 "healthcare_cost":y.healthcare_cost,
+                "annual_expenses":y.annual_expenses,
+                "annual_savings": y.annual_savings,
+                "annual_taxes":   y.annual_taxes,
             }
             for y in r.years
         ],
@@ -537,11 +596,21 @@ def results_to_dict(p: HouseholdParams, scenarios: dict[str, ScenarioResult]) ->
     liq_nw   = liquid_portfolio(p)
     hc_pre65 = healthcare_annual(pa.age, pb.age)   # today's estimate
 
+    # Tax-adjusted net worth: discount pre-tax 401k by expected withdrawal tax rate.
+    pretax_401k   = pa.k401_balance + pb.k401_balance
+    ret_tax_rate  = _FLAT_TAX_RATE
+    pretax_ratio  = pretax_401k / liq_nw if liq_nw > 0 else 0.0
+    tax_adj_nw    = liq_nw - pretax_401k * ret_tax_rate  # after-tax equivalent
+
     return {
         "household": {
-            "liquid_net_worth":    liq_nw,
-            "home_equity":         p.home_value - p.mortgage_balance,
-            "total_net_worth":     liq_nw + (p.home_value - p.mortgage_balance),
+            "liquid_net_worth":      liq_nw,
+            "tax_adjusted_net_worth":tax_adj_nw,
+            "pretax_401k":           pretax_401k,
+            "pretax_ratio":          pretax_ratio,
+            "ret_withdrawal_tax_rate": pretax_ratio * ret_tax_rate,
+            "home_equity":           p.home_value - p.mortgage_balance,
+            "total_net_worth":       liq_nw + (p.home_value - p.mortgage_balance),
             "unvested_rsu_total":  pa.unvested_rsu + pb.unvested_rsu,
             "fire_number_base":    p.annual_expenses_retirement / p.swr,
             "gap_to_fire":         max(0.0, p.annual_expenses_retirement / p.swr - liq_nw),

@@ -311,9 +311,9 @@
         <label class="toggle"><input type="checkbox" id="model_healthcare" checked/><span class="slider-t"></span></label>
       </div>
       <hr class="div"/>
-      <div class="section-label">Kids (S3 scenario)</div>
+      <div class="section-label">Kids</div>
       <div class="toggle-row">
-        <span>Include kids in S3</span>
+        <span>Include kids</span>
         <label class="toggle"><input type="checkbox" id="include_kids"/><span class="slider-t"></span></label>
       </div>
       <div class="pg"><div class="pl"><span>Number of Kids</span><span class="pv" id="v-kids_count">1</span></div>
@@ -357,17 +357,12 @@
       <div class="sc-item">
         <div class="sc-tag">S1</div>
         <div><div class="sc-name">Base Case</div>
-        <div class="sc-desc">Both partners work until the portfolio hits the FIRE number. No kids, no disruptions. The benchmark all other scenarios are compared against.</div></div>
+        <div class="sc-desc">Both partners work until the portfolio hits the FIRE number. No disruptions. The benchmark all other scenarios are compared against.</div></div>
       </div>
       <div class="sc-item">
         <div class="sc-tag">S2</div>
         <div><div class="sc-name">Sequential FIRE</div>
         <div class="sc-desc">Person A retires first; Person B works 3 more years. The remaining income covers expenses and lets the portfolio grow untouched.</div></div>
-      </div>
-      <div class="sc-item">
-        <div class="sc-tag">S3</div>
-        <div><div class="sc-name">With Kids</div>
-        <div class="sc-desc">Adds child costs: ~$20K/yr ages 0–5, $15K/yr ages 6–17, $40K/yr college. Configure count and start year in Expenses tab.</div></div>
       </div>
       <div class="sc-item">
         <div class="sc-tag">S4</div>
@@ -413,7 +408,8 @@
 
     <!-- Summary KPIs -->
     <div class="kpi-grid" id="kpi-grid">
-      <div class="kpi"><div class="kl">Liquid Net Worth</div><div class="kv good" id="kpi-lnw">—</div><div class="ks">Today</div></div>
+      <div class="kpi"><div class="kl">Liquid Net Worth</div><div class="kv good" id="kpi-lnw">—</div><div class="ks">Today (nominal)</div></div>
+      <div class="kpi"><div class="kl">Tax-Adjusted NW</div><div class="kv" id="kpi-tax-adj">—</div><div class="ks" id="kpi-tax-adj-sub">After 401k tax haircut</div></div>
       <div class="kpi"><div class="kl">FIRE Number</div><div class="kv" id="kpi-fire">—</div><div class="ks">Target portfolio</div></div>
       <div class="kpi"><div class="kl">Gap to FIRE</div><div class="kv" id="kpi-gap">—</div><div class="ks" id="kpi-gap-sub">—</div></div>
       <div class="kpi"><div class="kl">Base FIRE Age (A / B)</div><div class="kv" id="kpi-fire-age">—</div><div class="ks" id="kpi-fire-yr">—</div></div>
@@ -421,10 +417,10 @@
       <div class="kpi"><div class="kl">Healthcare Pre-65</div><div class="kv warn" id="kpi-hc">—</div><div class="ks">Annual estimate</div></div>
     </div>
 
-    <!-- Chart -->
+    <!-- Chart — tabbed nominal / real -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Portfolio Projection — Key Scenarios</span>
+        <span class="card-title">Portfolio Projection</span>
         <div class="legend">
           <div class="li"><div class="ld" style="background:#6c63ff"></div>S1 Base</div>
           <div class="li"><div class="ld" style="background:#00d4aa"></div>S4 Lean</div>
@@ -433,12 +429,23 @@
           <div class="li"><div class="ld" style="background:#a78bfa"></div>S8 Geo</div>
         </div>
       </div>
-      <div class="chart-wrap"><canvas id="fire-chart"></canvas></div>
+      <div class="tabs" id="chart-tabs">
+        <button class="tab-btn active" data-chart="nominal">Nominal Dollars</button>
+        <button class="tab-btn"        data-chart="real">Today's Dollars</button>
+      </div>
+      <div class="chart-wrap" id="chart-wrap-nominal"><canvas id="fire-chart"></canvas></div>
+      <div class="chart-wrap" id="chart-wrap-real"    style="display:none"><canvas id="fire-chart-real"></canvas></div>
     </div>
 
     <!-- Scenario comparison table -->
     <div class="scenario-card">
-      <div class="sc-hdr">Scenario Comparison</div>
+      <div class="sc-hdr" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Scenario Comparison</span>
+        <label style="display:flex;align-items:center;gap:7px;font-size:.75rem;font-weight:600;color:var(--muted);cursor:pointer">
+          <span>With Kids</span>
+          <label class="toggle"><input type="checkbox" id="comparison-kids"/><span class="slider-t"></span></label>
+        </label>
+      </div>
       <div class="sc-scroll">
         <table>
           <thead>
@@ -469,19 +476,38 @@
       </div>
     </div>
 
-    <!-- Annual detail table (S1 base) -->
+    <!-- Annual breakdown — tabbed (Base / Kids / Coast FIRE) -->
     <div class="scenario-card">
-      <div class="sc-hdr">S1 Base Case — Annual Breakdown</div>
+      <div class="sc-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:0">
+        <div class="tabs" id="breakdown-tabs" style="border-bottom:none;flex:1">
+          <button class="tab-btn active" data-breakdown="s1">S1 Base Case</button>
+          <button class="tab-btn"        data-breakdown="s7">S7 Coast FIRE</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:.75rem;font-weight:600;color:var(--muted);padding:0 16px;cursor:pointer;white-space:nowrap">
+          <span>With Kids</span>
+          <label class="toggle"><input type="checkbox" id="breakdown-kids"/><span class="slider-t"></span></label>
+        </label>
+      </div>
+
+      <!-- S7 Coast FIRE KPIs (shown only on s7 tab) -->
+      <div id="coast-kpis" style="display:none;grid-template-columns:repeat(4,1fr);gap:14px;padding:14px 18px;border-bottom:1px solid var(--border)">
+        <div class="kpi"><div class="kl">Coast FIRE Number</div><div class="kv" id="c-fire-num">—</div><div class="ks">Stop contributing &amp; coast</div></div>
+        <div class="kpi"><div class="kl">Current Portfolio</div><div class="kv" id="c-portfolio">—</div><div class="ks">Liquid today</div></div>
+        <div class="kpi"><div class="kl">Coast Status</div><div class="kv" id="c-status">—</div><div class="ks" id="c-status-sub">—</div></div>
+        <div class="kpi"><div class="kl">FIRE Age (A / B)</div><div class="kv" id="c-fire-age">—</div><div class="ks" id="c-fire-yr">—</div></div>
+      </div>
+      <div id="coast-explain" style="display:none;padding:10px 18px 6px;font-size:.78rem;color:var(--muted)">—</div>
+
       <div class="detail-scroll">
         <table>
           <thead>
             <tr>
               <th>Year</th><th>Age A / B</th><th>Portfolio</th>
-              <th>Real Portfolio</th><th>Contribution</th><th>Withdrawal</th>
-              <th>RSU Income</th><th>Healthcare</th><th>Status</th>
+              <th>Real Portfolio</th><th>Expenses</th><th>Taxes</th><th>Savings</th>
+              <th>Withdrawal</th><th>RSU Income</th><th>Healthcare</th><th>Status</th>
             </tr>
           </thead>
-          <tbody id="annual-tbody"></tbody>
+          <tbody id="breakdown-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -537,7 +563,7 @@ SLIDERS.forEach(({ id, fmt: f }) => {
 });
 
 // Checkboxes
-['sell_home','model_healthcare','include_kids'].forEach(id => {
+['sell_home','model_healthcare'].forEach(id => {
   document.getElementById(id)?.addEventListener('change', debounceSim);
 });
 document.getElementById('state')?.addEventListener('change', debounceSim);
@@ -545,11 +571,102 @@ document.getElementById('state')?.addEventListener('change', debounceSim);
 // ── Tab switching ────────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.input-panel .tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab)?.classList.add('active');
   });
+});
+
+// ── Chart tabs ───────────────────────────────────────────────────
+document.querySelectorAll('#chart-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#chart-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const isReal = btn.dataset.chart === 'real';
+    document.getElementById('chart-wrap-nominal').style.display = isReal ? 'none' : '';
+    document.getElementById('chart-wrap-real').style.display    = isReal ? ''     : 'none';
+  });
+});
+
+// ── Breakdown table tabs ─────────────────────────────────────────
+let _breakdownData = null;
+function renderBreakdown(scenarioKey) {
+  if (!_breakdownData) return;
+  const sc = _breakdownData.scenarios;
+  const h  = _breakdownData.household;
+  const isCoast = scenarioKey === 's7';
+
+  // Show/hide Coast FIRE KPI panel
+  const coastKpis = document.getElementById('coast-kpis');
+  const coastExp  = document.getElementById('coast-explain');
+  coastKpis.style.display = isCoast ? 'grid' : 'none';
+  coastExp.style.display  = isCoast ? 'block' : 'none';
+
+  if (isCoast) {
+    const s7 = sc.s7;
+    document.getElementById('c-fire-num').textContent  = fmt(s7.coast_fire_number);
+    document.getElementById('c-portfolio').textContent = fmt(h.tax_adjusted_net_worth);
+    const cStatusEl = document.getElementById('c-status');
+    cStatusEl.textContent = s7.coast_fire_reached ? '✓ Reached' : 'Not yet';
+    cStatusEl.className   = 'kv ' + (s7.coast_fire_reached ? 'good' : 'warn');
+    document.getElementById('c-status-sub').textContent =
+      s7.coast_fire_reached ? 'Could downshift careers now' : 'Keep contributing';
+    document.getElementById('c-fire-age').textContent =
+      s7.fire_age_a != null ? s7.fire_age_a + ' / ' + s7.fire_age_b : '—';
+    document.getElementById('c-fire-yr').textContent =
+      s7.fire_reached_year != null ? 'Year +' + s7.fire_reached_year : '—';
+    const gap = s7.coast_fire_number - h.tax_adjusted_net_worth;
+    coastExp.innerHTML = s7.coast_fire_reached
+      ? `Portfolio already exceeds the Coast FIRE number by <b>${fmt(-gap)}</b>. You could stop all new contributions today and reach your FIRE number at the target retirement age purely through compounding.`
+      : `You need <b>${fmt(gap)}</b> more to reach Coast FIRE. Once there, contributions become optional — compounding does the rest. Coast FIRE number = FIRE number ÷ (1 + r)^years_to_retire.`;
+  }
+
+  const tbody = document.getElementById('breakdown-tbody');
+  tbody.innerHTML = '';
+  sc[scenarioKey].years.forEach(y => {
+    const tr = document.createElement('tr');
+    if (y.fire_reached) tr.classList.add('fire-row');
+    if (y.depleted)     tr.classList.add('bad-row');
+    let badge = '';
+    if (y.fire_reached) badge = '<span class="badge b-good">FIRE</span>';
+    if (y.depleted)     badge = '<span class="badge b-bad">DEPLETED</span>';
+    tr.innerHTML = `
+      <td>${y.year}</td>
+      <td>${y.age_a} / ${y.age_b}</td>
+      <td>${fmt(y.portfolio)}</td>
+      <td>${fmt(y.real_portfolio)}</td>
+      <td>${y.annual_expenses > 100 ? fmt(y.annual_expenses) : '—'}</td>
+      <td>${y.annual_taxes    > 100 ? fmt(y.annual_taxes)    : '—'}</td>
+      <td class="${y.annual_savings < 0 ? 'warn' : ''}">${fmt(y.annual_savings)}</td>
+      <td>${y.withdrawal  > 100 ? fmt(y.withdrawal)  : '—'}</td>
+      <td>${y.rsu_income  > 100 ? fmt(y.rsu_income)  : '—'}</td>
+      <td>${y.healthcare_cost > 100 ? fmt(y.healthcare_cost) : '—'}</td>
+      <td>${badge}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('#breakdown-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#breakdown-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderBreakdown(btn.dataset.breakdown);
+  });
+});
+
+// ── Kids toggles — three checkboxes stay in sync: include_kids, breakdown-kids, comparison-kids
+const includeKidsCb   = document.getElementById('include_kids');
+const breakdownKids   = document.getElementById('breakdown-kids');
+const comparisonKids  = document.getElementById('comparison-kids');
+
+function syncKidsToggles(source) {
+  const val = source.checked;
+  [includeKidsCb, breakdownKids, comparisonKids].forEach(el => { if (el !== source) el.checked = val; });
+}
+[includeKidsCb, breakdownKids, comparisonKids].forEach(el => {
+  el.addEventListener('change', () => { syncKidsToggles(el); debounceSim(); });
 });
 
 // ── Collect params ───────────────────────────────────────────────
@@ -588,9 +705,9 @@ function collectParams() {
   };
 }
 
-// ── Chart ────────────────────────────────────────────────────────
-const ctx   = document.getElementById('fire-chart').getContext('2d');
-const chart = new Chart(ctx, {
+// ── Chart helpers ─────────────────────────────────────────────────
+function makeChartConfig() {
+  return {
   type: 'line',
   data: { labels: [], datasets: [] },
   options: {
@@ -609,7 +726,11 @@ const chart = new Chart(ctx, {
       y: { grid:{color:'#2e3350'}, ticks:{color:'#7a7f9a',font:{size:10},callback:v=>fmt(v)} }
     }
   }
-});
+  };
+}
+
+const chart     = new Chart(document.getElementById('fire-chart').getContext('2d'),     makeChartConfig());
+const chartReal = new Chart(document.getElementById('fire-chart-real').getContext('2d'), makeChartConfig());
 
 // ── Render ───────────────────────────────────────────────────────
 function statusBadge(r) {
@@ -626,11 +747,19 @@ function render(data) {
   document.getElementById('kpi-lnw').textContent = fmt(h.liquid_net_worth);
   document.getElementById('kpi-fire').textContent = fmt(h.fire_number_base);
 
+  const taxAdjEl = document.getElementById('kpi-tax-adj');
+  taxAdjEl.textContent = fmt(h.tax_adjusted_net_worth);
+  taxAdjEl.className   = 'kv ' + (h.tax_adjusted_net_worth >= h.fire_number_base ? 'good' : 'warn');
+  const taxPct = (h.ret_withdrawal_tax_rate * 100).toFixed(0);
+  document.getElementById('kpi-tax-adj-sub').textContent =
+    `401k discounted ~${taxPct}% withdrawal tax`;
+
+  const taxAdjGap = Math.max(0, h.fire_number_base - h.tax_adjusted_net_worth);
   const gapEl = document.getElementById('kpi-gap');
-  gapEl.textContent = fmt(h.gap_to_fire);
-  gapEl.className   = 'kv ' + (h.gap_to_fire <= 0 ? 'good' : 'warn');
+  gapEl.textContent = fmt(taxAdjGap);
+  gapEl.className   = 'kv ' + (taxAdjGap <= 0 ? 'good' : 'warn');
   document.getElementById('kpi-gap-sub').textContent =
-    h.gap_to_fire <= 0 ? '✓ Already at FIRE!' : `${pct(h.liquid_net_worth / h.fire_number_base)} funded`;
+    taxAdjGap <= 0 ? '✓ Already at FIRE!' : `${pct(h.tax_adjusted_net_worth / h.fire_number_base)} funded (tax-adj)`;
 
   const s1 = sc.s1;
   const fireAgeEl = document.getElementById('kpi-fire-age');
@@ -653,10 +782,11 @@ function render(data) {
 
   document.getElementById('kpi-hc').textContent = fmt(h.healthcare_pre65_annual);
 
-  // ── Chart — pick 5 key scenarios
+  // ── Charts — pick 5 key scenarios
   const palette = { s1:'#6c63ff', s4:'#00d4aa', s5:'#ffd166', s6:'#ff6b6b', s8:'#a78bfa' };
   const shown   = Object.keys(palette);
   const labels  = sc.s1.years.map(y => `${y.age_a}`);
+
   chart.data.labels   = labels;
   chart.data.datasets = shown.map(k => ({
     label: sc[k].name,
@@ -667,10 +797,20 @@ function render(data) {
   }));
   chart.update('none');
 
+  chartReal.data.labels   = labels;
+  chartReal.data.datasets = shown.map(k => ({
+    label: sc[k].name,
+    data:  sc[k].years.map(y => y.real_portfolio),
+    borderColor:     palette[k],
+    backgroundColor: 'transparent',
+    tension:0.3, pointRadius:0, borderWidth:2,
+  }));
+  chartReal.update('none');
+
   // ── Scenario table
   const tbody = document.getElementById('scenario-tbody');
   tbody.innerHTML = '';
-  Object.values(sc).forEach(r => {
+  Object.entries(sc).filter(([k]) => k !== 's3').map(([,r]) => r).forEach(r => {
     const depleted = !!r.depletion_age_a;
     const tr = document.createElement('tr');
     if (depleted) tr.classList.add('bad-row');
@@ -713,30 +853,10 @@ function render(data) {
   `;
   document.getElementById('hc-detail').innerHTML = hcHtml;
 
-  // ── Annual detail table (S1)
-  const atbody = document.getElementById('annual-tbody');
-  atbody.innerHTML = '';
-  s1.years.forEach(y => {
-    const tr = document.createElement('tr');
-    if (y.fire_reached) tr.classList.add('fire-row');
-    if (y.depleted)     tr.classList.add('bad-row');
-    let badge = '';
-    if (y.fire_reached) badge = '<span class="badge b-good">FIRE</span>';
-    if (y.a_retired && y.b_retired && y.year === 0) badge += '';
-    if (y.depleted) badge = '<span class="badge b-bad">DEPLETED</span>';
-    tr.innerHTML = `
-      <td>${y.year}</td>
-      <td>${y.age_a} / ${y.age_b}</td>
-      <td>${fmt(y.portfolio)}</td>
-      <td>${fmt(y.real_portfolio)}</td>
-      <td>${y.contribution > 100 ? fmt(y.contribution) : '—'}</td>
-      <td>${y.withdrawal  > 100 ? fmt(y.withdrawal)  : '—'}</td>
-      <td>${y.rsu_income  > 100 ? fmt(y.rsu_income)  : '—'}</td>
-      <td>${y.healthcare_cost > 100 ? fmt(y.healthcare_cost) : '—'}</td>
-      <td>${badge}</td>
-    `;
-    atbody.appendChild(tr);
-  });
+  // ── Breakdown table — store data and render active tab
+  _breakdownData = data;
+  const activeBreakdown = document.querySelector('#breakdown-tabs .tab-btn.active')?.dataset.breakdown ?? 's1';
+  renderBreakdown(activeBreakdown);
 }
 
 // ── API call ─────────────────────────────────────────────────────
@@ -778,6 +898,12 @@ async function loadConfig() {
         }
       }
     });
+    // Keep all kids toggles in sync with loaded config value
+    if (cfg.include_kids !== undefined) {
+      const v = Boolean(cfg.include_kids);
+      document.getElementById('breakdown-kids').checked  = v;
+      document.getElementById('comparison-kids').checked = v;
+    }
   } catch (e) {
     console.warn('Could not load /config defaults:', e);
   }
